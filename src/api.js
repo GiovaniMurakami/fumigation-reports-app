@@ -1,4 +1,10 @@
-const baseUrl = (import.meta.env.VITE_API_URL || "http://localhost:3000").replace(/\/$/, "");
+const configuredApiUrl = import.meta.env.VITE_API_URL?.trim();
+
+if (import.meta.env.PROD && !configuredApiUrl) {
+  throw new Error("VITE_API_URL não foi configurada no build de produção.");
+}
+
+const baseUrl = (configuredApiUrl || "http://localhost:3000").replace(/\/$/, "");
 const storageKey = "fumigadoc.auth";
 
 export const authStore = {

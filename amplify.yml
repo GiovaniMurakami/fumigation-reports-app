@@ -4,7 +4,8 @@ frontend:
     preBuild:
       commands:
         - if [ -f package-lock.json ]; then npm ci; else npm install; fi
-        - env | grep -E '^VITE_' > .env.production || true
+        - test -n "$VITE_API_URL" || (echo "ERRO: VITE_API_URL não configurada no Amplify" && exit 1)
+        - printf 'VITE_API_URL=%s\n' "$VITE_API_URL" > .env.production
     build:
       commands:
         - npm run build
