@@ -1,0 +1,6 @@
+.lot-list { display: flex; flex-wrap: wrap; gap: 6px; }
+.lotes-fields { display: grid; gap: 12px; margin-bottom: 22px; }
+.lote-row { display: grid; grid-template-columns: 1fr 40px; gap: 8px; align-items: end; }
+.remove-lote { height: 42px; border: 1px solid #e1c9c4; border-radius: 8px; background: #fff4f1; color: #9b3c2d; font-size: 22px; }
+.add-lote { justify-self: start; border: 0; background: none; color: var(--green); font-weight: 700; padding: 4px 0; }
+.identification { margin-top: 8px; }

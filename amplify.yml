@@ -1,0 +1,15 @@
+version: 1
+frontend:
+  phases:
+    preBuild:
+      commands:
+        - if [ -f package-lock.json ]; then npm ci; else npm install; fi
+        - env | grep -E '^VITE_' > .env.production || true
+    build:
+      commands:
+        - npm run build
+  artifacts:
+    baseDirectory: dist
+    files: ['**/*']
+  cache:
+    paths: [node_modules/**/*]
