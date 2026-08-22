@@ -15,7 +15,7 @@ function AuthProvider({ children }) {
 const useAuth = () => useContext(AuthContext);
 const formatDate = (value) => new Intl.DateTimeFormat("pt-BR", { dateStyle: "medium", timeStyle: "short" }).format(new Date(value));
 
-function Brand() { return <div className="brand"><span className="brand-mark">G</span><span>Galpex<small>Rastreabilidade de tratamentos</small></span></div>; }
+function Brand() { return <div className="brand"><img className="brand-mark" src="/biosafe-shield.png" alt="" /><span><span className="brand-name">BioSafe <em>Pest</em></span><small>Serviços sanitários</small></span></div>; }
 function Layout({ children }) {
   const { auth, logout } = useAuth();
   const navigate = useNavigate();
@@ -60,7 +60,7 @@ function Detail({ shared = false }) {
       const lotes = item.lotes.map(lote => `• ${lote}`).join("\n");
       const fotos = item.fotos.map((foto, index) => `${index + 1}. ${foto.url}`).join("\n");
       const mensagem = [
-        "*Relatório de fumigação — Galpex*",
+        "*Relatório de fumigação — Bio Safe Pest*",
         "",
         "*Lotes presentes:*",
         lotes,
@@ -82,7 +82,7 @@ function Detail({ shared = false }) {
   }
   if (error && !item) return <Layout><div className="empty"><b>{error}</b></div></Layout>;
   if (!item) return <Layout><div className="empty">Carregando relatório…</div></Layout>;
-  return <Layout>{!shared && <button className="back" onClick={() => navigate("/")}>← Voltar aos relatórios</button>}<div className="detail-head"><div><div className="lot-list">{item.lotes.map(lote => <span className="lot" key={lote}>LOTE {lote}</span>)}</div><h1>Relatório de fumigação</h1><p>{formatDate(item.dataTratamento)}</p></div>{!shared && <div className="detail-actions"><button className="secondary" onClick={doShare}>↗ Copiar link</button><button className="whatsapp" onClick={shareWhatsApp}>Compartilhar no WhatsApp</button></div>}</div>{error && <div className="error">{error}</div>}{share && <div className="share-box"><b>Link público do relatório</b><input readOnly value={share}/></div>}<section className="detail-card"><h2>Evidências fotográficas</h2><div className="photos">{item.fotos.map(f => <a href={f.url} target="_blank" rel="noreferrer" key={f.chave}><img src={f.url} alt={f.nome}/></a>)}</div></section>{shared && <p className="public-note">Relatório compartilhado por meio de link seguro da Galpex.</p>}</Layout>;
+  return <Layout>{!shared && <button className="back" onClick={() => navigate("/")}>← Voltar aos relatórios</button>}<div className="detail-head"><div><div className="lot-list">{item.lotes.map(lote => <span className="lot" key={lote}>LOTE {lote}</span>)}</div><h1>Relatório de fumigação</h1><p>{formatDate(item.dataTratamento)}</p></div>{!shared && <div className="detail-actions"><button className="secondary" onClick={doShare}>↗ Copiar link</button><button className="whatsapp" onClick={shareWhatsApp}>Compartilhar no WhatsApp</button></div>}</div>{error && <div className="error">{error}</div>}{share && <div className="share-box"><b>Link público do relatório</b><input readOnly value={share}/></div>}<section className="detail-card"><h2>Evidências fotográficas</h2><div className="photos">{item.fotos.map(f => <a href={f.url} target="_blank" rel="noreferrer" key={f.chave}><img src={f.url} alt={f.nome}/></a>)}</div></section>{shared && <p className="public-note">Relatório compartilhado por meio de link seguro da Bio Safe Pest.</p>}</Layout>;
 }
 function App() { return <AuthProvider><BrowserRouter><Routes><Route path="/login" element={<Login/>}/><Route path="/compartilhado/:token" element={<Detail shared/>}/><Route path="/" element={<Guard><Dashboard/></Guard>}/><Route path="/novo" element={<Guard><NewReport/></Guard>}/><Route path="/relatorios/:id" element={<Guard><Detail/></Guard>}/><Route path="*" element={<Navigate to="/" replace/>}/></Routes></BrowserRouter></AuthProvider>; }
 
