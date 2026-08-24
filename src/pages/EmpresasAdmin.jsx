@@ -11,8 +11,10 @@ const emptyGlobais = { assinaturas: [] };
 const normalizeList = (items) => items?.length ? items : [""];
 const cleanItems = (items) => [...new Set((items || []).map(item => item.trim()).filter(Boolean))];
 
-function ChipTextList({ label, values, onChange, placeholder, emptyText }) {
-  const [draft, setDraft] = useState("");
+function ChipTextList({ label, values, onChange, placeholder, emptyText, draftValue, onDraftChange }) {
+  const [localDraft, setLocalDraft] = useState("");
+  const draft = draftValue ?? localDraft;
+  const setDraft = onDraftChange ?? setLocalDraft;
   const items = cleanItems(values);
 
   const addItem = () => {
@@ -71,6 +73,7 @@ export function EmpresasAdmin() {
   const [empresaForm, setEmpresaForm] = useState(emptyEmpresa);
   const [globaisForm, setGlobaisForm] = useState(emptyGlobais);
   const [funcionariosForm, setFuncionariosForm] = useState([""]);
+  const [funcionarioDraft, setFuncionarioDraft] = useState("");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [busy, setBusy] = useState(false);
@@ -144,8 +147,10 @@ export function EmpresasAdmin() {
     setError("");
     setSuccess("");
     try {
-      await api.salvarFuncionarios({ funcionarios: cleanItems(funcionariosForm) });
+      const funcionarios = cleanItems([...funcionariosForm, funcionarioDraft]);
+      await api.salvarFuncionarios({ funcionarios });
       await load();
+      setFuncionarioDraft("");
       setSuccess("Funcionários salvos.");
     } catch (err) {
       setError(err.message);
@@ -247,6 +252,8 @@ export function EmpresasAdmin() {
               label="Funcionário"
               values={funcionariosForm}
               onChange={setFuncionariosForm}
+              draftValue={funcionarioDraft}
+              onDraftChange={setFuncionarioDraft}
               placeholder="Nome do funcionário"
               emptyText="Nenhum funcionário cadastrado."
             />
