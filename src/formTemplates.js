@@ -75,6 +75,7 @@ export const formCatalog = {
         "Arm. Feromônio - Epdópterus",
         "Pulverização Manual",
         "Pulverização Mecanizada",
+        "Fumigação",
         "Termonebulização",
         "Limpeza de armazém",
         "Serviços de manutenção"
