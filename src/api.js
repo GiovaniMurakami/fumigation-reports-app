@@ -5,7 +5,7 @@ if (import.meta.env.PROD && !configuredApiUrl) {
 }
 
 const developmentApiUrl = import.meta.env.DEV ? "http://localhost:3000" : "";
-const baseUrl = (configuredApiUrl || developmentApiUrl).replace(/\/$/, "");
+export const apiBaseUrl = (configuredApiUrl || developmentApiUrl).replace(/\/$/, "");
 const storageKey = "fumigadoc.auth";
 
 export const authStore = {
@@ -18,7 +18,7 @@ async function request(path, options = {}, authenticated = true) {
   const auth = authStore.get();
   const headers = { ...(options.body && !(options.body instanceof FormData) ? { "Content-Type": "application/json" } : {}), ...options.headers };
   if (authenticated && auth?.token) headers.Authorization = `Bearer ${auth.token}`;
-  const response = await fetch(`${baseUrl}${path}`, { ...options, headers });
+  const response = await fetch(`${apiBaseUrl}${path}`, { ...options, headers });
   if (response.status === 204) return null;
   const data = await response.json().catch(() => ({}));
   if (!response.ok) {

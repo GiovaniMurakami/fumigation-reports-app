@@ -1,4 +1,5 @@
 import { jsPDF } from "jspdf";
+import { apiBaseUrl } from "../api";
 
 const colors = { dark: [10, 46, 24], green: [21, 99, 50], lime: [168, 214, 58], text: [24, 49, 44], muted: [100, 116, 139], line: [220, 232, 223], light: [246, 250, 247] };
 const page = { width: 210, height: 297, margin: 15, content: 180, footer: 282 };
@@ -30,19 +31,36 @@ const formatDate = value => {
   return Number.isNaN(date.getTime()) ? textValue(value) : new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short" }).format(date);
 };
 
+const isS3Url = url => {
+  try { return /\.s3(?:[.-][a-z0-9-]+)?\.amazonaws\.com$/i.test(new URL(url, window.location.origin).hostname); }
+  catch { return false; }
+};
+
+const blobToDataUrl = blob => new Promise((resolve, reject) => {
+  const reader = new FileReader();
+  reader.onload = () => resolve(reader.result);
+  reader.onerror = reject;
+  reader.readAsDataURL(blob);
+});
+
+const fetchImage = async url => {
+  const response = await fetch(url, { mode: "cors", credentials: "omit", cache: "no-store", headers: { Accept: "image/*" } });
+  if (!response.ok) throw new Error(`Imagem indisponível (${response.status}).`);
+  const blob = await response.blob();
+  if (!blob.type.startsWith("image/")) throw new Error("O recurso retornado não é uma imagem.");
+  return blobToDataUrl(blob);
+};
+
 const fetchDataUrl = async url => {
   if (!url) return null;
-  try {
-    const response = await fetch(url);
-    if (!response.ok) return null;
-    const blob = await response.blob();
-    return await new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result);
-      reader.onerror = reject;
-      reader.readAsDataURL(blob);
-    });
-  } catch { return null; }
+  const absoluteUrl = new URL(url, window.location.origin).toString();
+  const candidates = isS3Url(absoluteUrl) && apiBaseUrl
+    ? [`${apiBaseUrl}/imagens/proxy?url=${encodeURIComponent(absoluteUrl)}`, absoluteUrl]
+    : [absoluteUrl];
+  for (const candidate of candidates) {
+    try { return await fetchImage(candidate); } catch { /* tenta a próxima origem */ }
+  }
+  return null;
 };
 
 const sectionTitle = (doc, title, y) => {
