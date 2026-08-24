@@ -12,19 +12,10 @@ export function Detail({ shared = false }) {
   useEffect(() => { (shared ? api.publico(params.token) : api.buscar(params.id)).then(setItem).catch(e => setError(e.message)); }, [params.id, params.token, shared]);
   async function exportPdf() {
     try {
-      if (shared) {
-        window.open(api.pdfPublicoUrl(params.token), "_blank", "noopener,noreferrer");
-        return;
-      }
-      const blob = await api.baixarPdf(item.id);
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = `relatorio-${item.numeroOs || item.id}.pdf`;
-      link.click();
-      URL.revokeObjectURL(url);
-    } catch (e) {
-      setError(e.message);
+      const { baixarPdfRelatorio } = await import("../services/pdfRelatorio");
+      await baixarPdfRelatorio(item);
+    } catch {
+      setError("Não foi possível gerar o PDF neste navegador.");
     }
   }
   async function doShare() { try { const data = await api.compartilhar(item.id); setShare(data.url); await navigator.clipboard?.writeText(data.url); } catch (e) { setError(e.message); } }
