@@ -77,8 +77,10 @@ const header = (doc, title, identifier, logo) => {
   doc.text(doc.splitTextToSize(title, 125), 40, 10);
   doc.setTextColor(220, 232, 223).setFont("helvetica", "normal").setFontSize(7).text("BIOSAFE PEST  •  SERVIÇOS SANITÁRIOS", 40, 23);
   if (identifier) {
-    doc.setFillColor(...colors.green).roundedRect(159, 19, 36, 8, 1.5, 1.5, "F");
-    doc.setTextColor(255, 255, 255).setFont("helvetica", "bold").setFontSize(6).text(doc.splitTextToSize(identifier, 32), 177, 22, { align: "center" });
+    const badge = { x: 158, y: 18, width: 37, height: 9 };
+    doc.setFillColor(...colors.green).roundedRect(badge.x, badge.y, badge.width, badge.height, 2, 2, "F");
+    doc.setTextColor(255, 255, 255).setFont("helvetica", "bold").setFontSize(6);
+    doc.text(textValue(identifier), badge.x + badge.width / 2, badge.y + badge.height / 2, { align: "center", baseline: "middle", maxWidth: badge.width - 5 });
   }
 };
 
