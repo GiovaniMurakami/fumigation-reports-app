@@ -32,11 +32,30 @@ async function request(path, options = {}, authenticated = true) {
 export const api = {
   login: (body) => request("/auth/login", { method: "POST", body: JSON.stringify(body) }, false),
   cadastro: (body) => request("/auth/cadastro", { method: "POST", body: JSON.stringify(body) }, false),
+  listarUsuarios: () => request("/usuarios"),
+  validarUsuario: (id, body) => request(`/usuarios/${encodeURIComponent(id)}/validar`, { method: "PATCH", body: JSON.stringify(body) }),
+  listarEmpresas: () => request("/empresas"),
+  criarEmpresa: (body) => request("/empresas", { method: "POST", body: JSON.stringify(body) }),
+  atualizarEmpresa: (id, body) => request(`/empresas/${encodeURIComponent(id)}`, { method: "PUT", body: JSON.stringify(body) }),
+  obterCadastrosGlobais: () => request("/cadastros-globais"),
+  salvarCadastrosGlobais: (body) => request("/cadastros-globais", { method: "PUT", body: JSON.stringify(body) }),
+  listarFuncionarios: () => request("/funcionarios"),
+  salvarFuncionarios: (body) => request("/funcionarios", { method: "PUT", body: JSON.stringify(body) }),
   listar: (lote = "") => request(`/relatorios?lote=${encodeURIComponent(lote)}`),
   buscar: (id) => request(`/relatorios/${id}`),
   criar: (body) => request("/relatorios", { method: "POST", body: JSON.stringify(body) }),
   compartilhar: (id) => request(`/relatorios/${id}/compartilhar`, { method: "POST" }),
   publico: (token) => request(`/publico/relatorios/${encodeURIComponent(token)}`, {}, false),
+  pdfUrl: (id) => `${baseUrl}/relatorios/${encodeURIComponent(id)}/pdf`,
+  pdfPublicoUrl: (token) => `${baseUrl}/publico/relatorios/${encodeURIComponent(token)}/pdf`,
+  async baixarPdf(id) {
+    const auth = authStore.get();
+    const response = await fetch(`${baseUrl}/relatorios/${encodeURIComponent(id)}/pdf`, {
+      headers: auth?.token ? { Authorization: `Bearer ${auth.token}` } : {},
+    });
+    if (!response.ok) throw new Error("Não foi possível exportar o PDF.");
+    return response.blob();
+  },
   async upload(file) {
     const signed = await request("/uploads/url", { method: "POST", body: JSON.stringify({ nome: file.name, contentType: file.type, tamanho: file.size }) });
     const upload = await fetch(signed.uploadUrl, { method: "PUT", headers: { "Content-Type": file.type }, body: file });
