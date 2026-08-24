@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
-import { api } from "../api";
+import { api, apiBaseUrl } from "../api";
 import { useAuth } from "../auth/AuthContext";
 import { Field } from "../components/Field";
 import { Layout } from "../components/Layout";
@@ -10,6 +10,7 @@ const emptyGlobais = { assinaturas: [] };
 
 const normalizeList = (items) => items?.length ? items : [""];
 const cleanItems = (items) => [...new Set((items || []).map(item => item.trim()).filter(Boolean))];
+const assinaturaPreviewUrl = url => url ? `${apiBaseUrl}/imagens/proxy?url=${encodeURIComponent(url)}` : "";
 
 function ChipTextList({ label, values, onChange, placeholder, emptyText, draftValue, onDraftChange }) {
   const [localDraft, setLocalDraft] = useState("");
@@ -282,7 +283,7 @@ export function EmpresasAdmin() {
                   <div className="signature-list">
                     {globaisForm.assinaturas.map((assinatura, index) => (
                       <div className="signature-item compact-signature-item" key={assinatura.chave || index}>
-                        {assinatura.url && <img src={assinatura.url} alt="" />}
+                        {assinatura.url && <img src={assinaturaPreviewUrl(assinatura.url)} alt={`Assinatura de ${assinatura.nome || "responsável"}`} />}
                         <Field label="Nome" value={assinatura.nome || ""} onChange={nome => updateAssinatura(index, { nome })} required />
                         <Field label="Cargo" value={assinatura.cargo || ""} onChange={cargo => updateAssinatura(index, { cargo })} />
                         <button type="button" className="link" onClick={() => removerAssinatura(index)}>Remover</button>
