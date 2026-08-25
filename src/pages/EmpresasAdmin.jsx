@@ -25,7 +25,10 @@ function ChipTextList({ label, values, onChange, placeholder, emptyText, draftVa
     setDraft("");
   };
 
-  const removeItem = (item) => onChange(items.filter(current => current !== item));
+  const removeItem = (item) => {
+    const nextItems = items.filter(current => current !== item);
+    onChange(nextItems, { removed: item });
+  };
 
   return (
     <section className="chip-editor">
@@ -190,15 +193,47 @@ export function EmpresasAdmin() {
     }
   }
 
+  async function removerFuncionario(funcionarios, action) {
+    setFuncionariosForm(funcionarios);
+    if (!action?.removed) return;
+    setBusy(true);
+    setError("");
+    setSuccess("");
+    try {
+      const data = await api.salvarFuncionarios({ funcionarios: cleanItems(funcionarios) });
+      setFuncionariosForm(normalizeList((data.itens || []).map(funcionario => funcionario.nome)));
+      setSuccess(`Funcionario "${action.removed}" removido.`);
+    } catch (err) {
+      setError(err.message);
+      await load().catch(() => {});
+    } finally {
+      setBusy(false);
+    }
+  }
+
   const updateAssinatura = (index, patch) => setGlobaisForm(current => ({
     ...current,
     assinaturas: current.assinaturas.map((assinatura, itemIndex) => itemIndex === index ? { ...assinatura, ...patch } : assinatura),
   }));
 
-  const removerAssinatura = (index) => setGlobaisForm(current => ({
-    ...current,
-    assinaturas: current.assinaturas.filter((_, itemIndex) => itemIndex !== index),
-  }));
+  async function removerAssinatura(index) {
+    const assinatura = globaisForm.assinaturas[index];
+    const assinaturas = globaisForm.assinaturas.filter((_, itemIndex) => itemIndex !== index);
+    setGlobaisForm(current => ({ ...current, assinaturas }));
+    setBusy(true);
+    setError("");
+    setSuccess("");
+    try {
+      const data = await api.salvarCadastrosGlobais({ assinaturas });
+      setGlobaisForm({ assinaturas: data.cadastro?.assinaturas || [] });
+      setSuccess(`Assinatura${assinatura?.nome ? ` de "${assinatura.nome}"` : ""} removida.`);
+    } catch (err) {
+      setError(err.message);
+      await load().catch(() => {});
+    } finally {
+      setBusy(false);
+    }
+  }
 
   return (
     <Layout>
@@ -252,7 +287,7 @@ export function EmpresasAdmin() {
             <ChipTextList
               label="Funcionário"
               values={funcionariosForm}
-              onChange={setFuncionariosForm}
+              onChange={removerFuncionario}
               draftValue={funcionarioDraft}
               onDraftChange={setFuncionarioDraft}
               placeholder="Nome do funcionário"
@@ -286,7 +321,7 @@ export function EmpresasAdmin() {
                         {assinatura.url && <img src={assinaturaPreviewUrl(assinatura.url)} alt={`Assinatura de ${assinatura.nome || "responsável"}`} />}
                         <Field label="Nome" value={assinatura.nome || ""} onChange={nome => updateAssinatura(index, { nome })} required />
                         <Field label="Cargo" value={assinatura.cargo || ""} onChange={cargo => updateAssinatura(index, { cargo })} />
-                        <button type="button" className="link" onClick={() => removerAssinatura(index)}>Remover</button>
+                        <button type="button" className="link" disabled={busy} onClick={() => removerAssinatura(index)}>Remover</button>
                       </div>
                     ))}
                   </div>
