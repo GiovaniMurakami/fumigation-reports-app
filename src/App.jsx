@@ -9,5 +9,55 @@ import { NewReport } from "./pages/NewReport";
 import { UsersAdmin } from "./pages/UsersAdmin";
 
 export function App() {
-  return <AuthProvider><BrowserRouter><Routes><Route path="/login" element={<Login/>}/><Route path="/compartilhado/:token" element={<Detail shared/>}/><Route path="/" element={<Guard><Dashboard/></Guard>}/><Route path="/novo" element={<Guard><NewReport/></Guard>}/><Route path="/empresas" element={<Guard><EmpresasAdmin/></Guard>}/><Route path="/usuarios" element={<Guard><UsersAdmin/></Guard>}/><Route path="/relatorios/:id" element={<Guard><Detail/></Guard>}/><Route path="*" element={<Navigate to="/" replace/>}/></Routes></BrowserRouter></AuthProvider>;
+  return (
+    <AuthProvider>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/login" element={<Login />} />
+          <Route path="/compartilhado/:token" element={<Detail shared />} />
+          <Route
+            path="/"
+            element={
+              <Guard>
+                <Dashboard />
+              </Guard>
+            }
+          />
+          <Route
+            path="/novo"
+            element={
+              <Guard>
+                <NewReport />
+              </Guard>
+            }
+          />
+          <Route
+            path="/empresas"
+            element={
+              <Guard>
+                <EmpresasAdmin />
+              </Guard>
+            }
+          />
+          <Route
+            path="/usuarios"
+            element={
+              <Guard>
+                <UsersAdmin />
+              </Guard>
+            }
+          />
+          <Route
+            path="/relatorios/:id"
+            element={
+              <Guard>
+                <Detail />
+              </Guard>
+            }
+          />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </BrowserRouter>
+    </AuthProvider>
+  );
 }

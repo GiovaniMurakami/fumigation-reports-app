@@ -1,6 +1,7 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
+import { AppleIcon } from "./AppleIcon";
 import { Brand } from "./Brand";
 
 export function Layout({ children }) {
@@ -9,5 +10,68 @@ export function Layout({ children }) {
   const [navOpen, setNavOpen] = useState(false);
   const isAdmin = auth?.usuario?.role === "admin";
 
-  return <><header><Brand />{auth && <><button className="nav-toggle" type="button" aria-label="Abrir menu" aria-expanded={navOpen} onClick={() => setNavOpen(value => !value)}><span/><span/><span/></button><div className={`account${navOpen ? " open" : ""}`}><span>Olá, <b>{auth.usuario.nome.split(" ")[0]}</b>{auth.usuario.empresa ? ` · ${auth.usuario.empresa}` : ""}</span>{isAdmin && <button className="link" onClick={() => (setNavOpen(false), navigate("/empresas"))}>Empresas</button>}{isAdmin && <button className="link" onClick={() => (setNavOpen(false), navigate("/usuarios"))}>Usuários</button>}<button className="link" onClick={() => { setNavOpen(false); logout(); navigate("/login"); }}>Sair</button></div></>}</header><main>{children}</main></>;
+  return (
+    <div className="app-shell">
+      <header className="app-header">
+        <NavLink
+          className="brand-link"
+          to="/"
+          aria-label="BioSafe Pest ? in?cio"
+        >
+          <Brand />
+        </NavLink>
+        {auth && (
+          <>
+            <button
+              className="nav-toggle"
+              type="button"
+              aria-controls="primary-navigation"
+              aria-label="Abrir menu"
+              aria-expanded={navOpen}
+              onClick={() => setNavOpen((value) => !value)}
+            >
+              <AppleIcon name={navOpen ? "close" : "menu"} size={20} />
+            </button>
+            <nav
+              id="primary-navigation"
+              className={`account${navOpen ? " open" : ""}`}
+              aria-label="Navega??o principal"
+            >
+              <span>
+                Olá, <b>{auth.usuario.nome.split(" ")[0]}</b>
+                {auth.usuario.empresa ? ` · ${auth.usuario.empresa}` : ""}
+              </span>
+              {isAdmin && (
+                <button
+                  className="link"
+                  onClick={() => (setNavOpen(false), navigate("/empresas"))}
+                >
+                  Empresas
+                </button>
+              )}
+              {isAdmin && (
+                <button
+                  className="link"
+                  onClick={() => (setNavOpen(false), navigate("/usuarios"))}
+                >
+                  Usuários
+                </button>
+              )}
+              <button
+                className="link"
+                onClick={() => {
+                  setNavOpen(false);
+                  logout();
+                  navigate("/login");
+                }}
+              >
+                Sair
+              </button>
+            </nav>
+          </>
+        )}
+      </header>
+      <main>{children}</main>
+    </div>
+  );
 }

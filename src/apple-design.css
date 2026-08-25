@@ -1,0 +1,262 @@
+/* BioSafe Apple-inspired interface system */
+:root {
+  color-scheme: light;
+  --apple-bg: #f2f4f2;
+  --apple-surface: rgba(255, 255, 255, 0.86);
+  --apple-surface-solid: #ffffff;
+  --apple-label: #172019;
+  --apple-secondary-label: #667169;
+  --apple-tertiary-label: #879189;
+  --apple-separator: rgba(20, 45, 28, 0.12);
+  --apple-tint: #14743c;
+  --apple-tint-pressed: #0c572d;
+  --apple-fill: rgba(23, 64, 36, 0.08);
+  --apple-danger: #c9342d;
+  --apple-radius-sm: 10px;
+  --apple-radius-md: 14px;
+  --apple-radius-lg: 20px;
+  --apple-control-height: 44px;
+  --apple-shadow-sm: 0 1px 2px rgba(21, 43, 28, 0.04);
+  --apple-shadow-lg: 0 20px 50px rgba(21, 43, 28, 0.1);
+}
+
+body {
+  background: var(--apple-bg);
+  color: var(--apple-label);
+}
+::selection {
+  background: rgba(20, 116, 60, 0.2);
+}
+:focus-visible {
+  outline: 3px solid rgba(20, 116, 60, 0.28);
+  outline-offset: 2px;
+}
+.apple-icon {
+  display: block;
+  flex: 0 0 auto;
+}
+.app-shell {
+  min-height: 100vh;
+}
+.app-header {
+  isolation: isolate;
+}
+.brand-link {
+  border-radius: var(--apple-radius-sm);
+  color: inherit;
+  text-decoration: none;
+}
+.brand-link:focus-visible {
+  outline-offset: 5px;
+}
+
+.account {
+  gap: 5px;
+}
+.account-greeting {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-right: 8px;
+}
+.account-avatar {
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: #e2eee5;
+  color: var(--apple-tint);
+  font-size: 13px;
+  font-weight: 700;
+}
+.account-greeting > span:last-child {
+  display: grid;
+}
+.account-greeting small {
+  color: var(--apple-secondary-label);
+  font-size: 10px;
+  line-height: 1;
+}
+.account-greeting b {
+  color: var(--apple-label);
+  font-size: 13px;
+}
+.nav-item {
+  min-height: 40px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  border: 0;
+  border-radius: var(--apple-radius-sm);
+  background: transparent;
+  color: var(--apple-secondary-label);
+  padding: 0 11px;
+  font-weight: 600;
+  text-decoration: none;
+}
+.nav-item:hover {
+  background: var(--apple-fill);
+  color: var(--apple-label);
+}
+.nav-item.active {
+  background: rgba(20, 116, 60, 0.1);
+  color: var(--apple-tint);
+}
+.nav-signout {
+  font: inherit;
+  cursor: pointer;
+}
+
+.primary,
+.secondary,
+.whatsapp,
+.search button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.primary:focus-visible,
+.secondary:focus-visible,
+.whatsapp:focus-visible {
+  outline-offset: 3px;
+}
+.field > span,
+.signature-picker legend {
+  letter-spacing: -0.005em;
+}
+.field input::placeholder,
+.field textarea::placeholder,
+.search input::placeholder {
+  color: var(--apple-tertiary-label);
+}
+.field input:disabled,
+.field select:disabled,
+.field textarea:disabled {
+  background: rgba(230, 234, 231, 0.72);
+  color: var(--apple-secondary-label);
+  opacity: 1;
+}
+.form-section-content {
+  min-width: 0;
+}
+.form-section-content > h2 {
+  display: flex;
+  align-items: center;
+  min-height: 32px;
+}
+
+.report-card:focus-visible {
+  border-color: var(--apple-tint);
+  box-shadow:
+    0 0 0 4px rgba(20, 116, 60, 0.14),
+    var(--apple-shadow-lg);
+  outline: 0;
+}
+.report-placeholder {
+  align-content: center;
+  justify-items: center;
+  gap: 8px;
+}
+.report-placeholder .apple-icon {
+  opacity: 0.72;
+}
+.report-placeholder span {
+  font-size: 13px;
+}
+.search > .apple-icon {
+  color: var(--apple-secondary-label);
+}
+
+.tabs [role="tab"] {
+  position: relative;
+}
+.tabs [role="tab"]:focus-visible {
+  outline: 3px solid rgba(20, 116, 60, 0.22);
+  outline-offset: 1px;
+}
+.auth-card form {
+  margin-top: 8px;
+}
+.auth-card .primary {
+  font-weight: 650;
+}
+
+.detail-card,
+.form-section,
+.report-card,
+.user-row {
+  -webkit-backdrop-filter: blur(18px);
+  backdrop-filter: blur(18px);
+}
+.detail-card h2 {
+  color: var(--apple-label);
+}
+.section-number {
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.24);
+}
+.notice,
+.success,
+.error {
+  border: 1px solid transparent;
+}
+.notice {
+  border-color: rgba(20, 116, 60, 0.1);
+}
+.success {
+  border-color: rgba(40, 130, 62, 0.12);
+}
+.error {
+  border-color: rgba(201, 52, 45, 0.12);
+}
+
+.chip-item,
+.product-option,
+.signature-option,
+.admin-list button {
+  -webkit-tap-highlight-color: transparent;
+}
+.chip-item:focus-visible,
+.product-option:focus-visible,
+.signature-option:focus-within,
+.admin-list button:focus-visible {
+  outline: 0;
+  border-color: var(--apple-tint);
+  box-shadow: 0 0 0 4px rgba(20, 116, 60, 0.14);
+}
+.remove-lote:hover {
+  background: #ffe6e3;
+}
+.link:disabled {
+  opacity: 0.45;
+}
+
+@media (max-width: 600px) {
+  .account.open {
+    gap: 4px;
+  }
+  .account.open .account-greeting {
+    margin: 0 0 4px;
+    padding: 8px 10px 12px;
+    border-bottom: 1px solid var(--apple-separator);
+  }
+  .account.open .nav-item,
+  .account.open .link {
+    width: 100%;
+    min-height: 46px;
+    justify-content: flex-start;
+  }
+  .report-card:hover {
+    transform: none;
+  }
+  .form-section {
+    border-radius: 16px;
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: light;
+  }
+}
