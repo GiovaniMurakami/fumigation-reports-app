@@ -34,6 +34,23 @@ const fumigationEndDateId = "entry.2031509747";
 const dateToIso = (value) =>
   value ? new Date(`${value}T12:00:00`).toISOString() : undefined;
 
+async function uploadFiles(files, onProgress) {
+  const results = [];
+  let nextIndex = 0;
+  let done = 0;
+  const workers = Array.from({ length: Math.min(4, files.length) }, async () => {
+    while (nextIndex < files.length) {
+      const index = nextIndex;
+      nextIndex += 1;
+      results[index] = await api.upload(files[index]);
+      done += 1;
+      onProgress(done);
+    }
+  });
+  await Promise.all(workers);
+  return results;
+}
+
 function FumigationLots({ values, onChange }) {
   const update = (index, value) =>
     onChange(
@@ -82,6 +99,7 @@ export function NewReport() {
   const [cadastrosGlobais, setCadastrosGlobais] = useState({ assinaturas: [] });
   const [funcionarios, setFuncionarios] = useState([]);
   const [files, setFiles] = useState([]);
+  const [uploadProgress, setUploadProgress] = useState(null);
   const [repeatableValues, setRepeatableValues] = useState({});
   const [fumigationLotes, setFumigationLotes] = useState([""]);
   const [error, setError] = useState("");
@@ -229,7 +247,10 @@ export function NewReport() {
                 ),
             }
           : {};
-      const fotos = await Promise.all(files.map(api.upload));
+      if (files.length) setUploadProgress({ done: 0, total: files.length });
+      const fotos = await uploadFiles(files, (done) =>
+        setUploadProgress({ done, total: files.length }),
+      );
       const dataTratamento = dateToIso(dataValue) || new Date().toISOString();
       const dataInicio =
         controle === "Fumigação"
@@ -275,6 +296,7 @@ export function NewReport() {
       setError(err.message);
     } finally {
       setBusy(false);
+      setUploadProgress(null);
     }
   }
 
@@ -525,16 +547,27 @@ export function NewReport() {
               type="file"
               accept="image/jpeg,image/png,image/webp"
               multiple
-              onChange={(e) =>
-                setFiles(Array.from(e.target.files).slice(0, 12))
-              }
+              onChange={(e) => setFiles(Array.from(e.target.files))}
             />
           </label>
           {files.length > 0 && (
-            <div className="file-list">
-              {files.map((file) => (
-                <span key={file.name}>{file.name}</span>
-              ))}
+            <>
+              <p className="muted file-count">
+                {files.length} foto{files.length !== 1 ? "s" : ""} selecionada
+                {files.length !== 1 ? "s" : ""}
+              </p>
+              <div className="file-list">
+                {files.map((file, index) => (
+                  <span key={`${file.name}-${file.size}-${file.lastModified}-${index}`}>
+                    {file.name}
+                  </span>
+                ))}
+              </div>
+            </>
+          )}
+          {uploadProgress && (
+            <div className="notice">
+              Enviando fotos: {uploadProgress.done}/{uploadProgress.total}
             </div>
           )}
         </FormSection>
