@@ -280,10 +280,6 @@ body {
   transform: none;
 }
 
-.user-actions {
-  grid-template-columns: minmax(260px, 1fr) 160px auto;
-}
-
 .company-picker {
   min-width: 0;
   margin: 0;
@@ -291,25 +287,41 @@ body {
   padding: 0;
 }
 
+.company-picker-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 6px;
+}
+
 .company-picker legend {
-  margin-bottom: 7px;
   color: #35433a;
   font-size: 13px;
   font-weight: 600;
 }
 
+.company-picker-head span {
+  color: var(--apple-secondary-label);
+  font-size: 11px;
+  font-weight: 800;
+  background: rgba(23, 64, 36, 0.07);
+  border-radius: 999px;
+  padding: 4px 8px;
+}
+
 .company-picker p {
-  margin: -2px 0 8px;
+  margin: 0 0 10px;
   color: var(--apple-secondary-label);
   font-size: 12px;
   line-height: 1.35;
 }
 
 .company-options {
-  max-height: 150px;
+  max-height: 156px;
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: 7px;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 8px;
   overflow: auto;
   padding-right: 4px;
 }
@@ -320,17 +332,24 @@ body {
   align-items: center;
   gap: 8px;
   border: 1px solid var(--apple-separator);
-  border-radius: 10px;
+  border-radius: 8px;
   background: rgba(255, 255, 255, 0.72);
-  padding: 9px 10px;
+  padding: 10px 11px;
   color: var(--apple-label);
   font-size: 13px;
   font-weight: 600;
+  min-height: 42px;
 }
 
 .company-option:hover {
   border-color: rgba(20, 116, 60, 0.28);
   background: #fff;
+}
+
+.company-option.selected {
+  border-color: rgba(20, 116, 60, 0.42);
+  background: #edf5e3;
+  box-shadow: inset 0 0 0 1px rgba(20, 116, 60, 0.08);
 }
 
 .company-option input {
@@ -344,6 +363,11 @@ body {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.access-controls .primary {
+  width: 100%;
+  min-height: 46px;
 }
 
 @media (max-width: 600px) {
@@ -361,10 +385,6 @@ body {
   .pagination-button {
     width: 100%;
     min-width: 0;
-  }
-
-  .user-actions {
-    grid-template-columns: 1fr;
   }
 
   .company-options {
