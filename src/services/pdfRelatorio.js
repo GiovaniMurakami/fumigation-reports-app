@@ -31,6 +31,11 @@ const formatDate = value => {
   return Number.isNaN(date.getTime()) ? textValue(value) : new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short" }).format(date);
 };
 
+const formatDateOnly = value => {
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? textValue(value) : new Intl.DateTimeFormat("pt-BR", { dateStyle: "short" }).format(date);
+};
+
 const isS3Url = url => {
   try { return /\.s3(?:[.-][a-z0-9-]+)?\.amazonaws\.com$/i.test(new URL(url, window.location.origin).hostname); }
   catch { return false; }
@@ -85,9 +90,18 @@ const header = (doc, title, identifier, logo) => {
 };
 
 const identification = (doc, item, startY) => {
-  const fields = [["EMPRESA", item.empresa], ["CLIENTE / UNIDADE", item.unidadeCliente || item.formularioTitulo], ["ÁREA / SETOR", item.areaSetor], ["REALIZADO POR", item.realizadoPor], ["DATA", formatDate(item.dataTratamento)], ["TIPO DE CONTROLE", item.tipoControle]];
+  const fields = [
+    ["EMPRESA", item.empresa],
+    ["CLIENTE / UNIDADE", item.unidadeCliente || item.formularioTitulo],
+    ["ÁREA / SETOR", item.areaSetor],
+    ["REALIZADO POR", item.realizadoPor],
+    ["DATA", formatDate(item.dataTratamento)],
+    ["TIPO DE CONTROLE", item.tipoControle],
+    ...(item.dataInicio ? [["DATA INÍCIO", formatDateOnly(item.dataInicio)]] : []),
+    ...(item.dataFim ? [["DATA FIM", formatDateOnly(item.dataFim)]] : []),
+  ];
   let y = startY;
-  for (let row = 0; row < 2; row += 1) {
+  for (let row = 0; row < Math.ceil(fields.length / 3); row += 1) {
     const rowFields = fields.slice(row * 3, row * 3 + 3);
     doc.setFont("helvetica", "bold").setFontSize(7);
     const heights = rowFields.map(([, value]) => Math.max(16, 10 + doc.splitTextToSize(textValue(value) || "-", 50).length * 3.2));

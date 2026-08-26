@@ -28,6 +28,12 @@ const initialReport = {
   dadosAtividade: {},
 };
 
+const fumigationStartDateId = "entry.1661451672";
+const fumigationEndDateId = "entry.2031509747";
+
+const dateToIso = (value) =>
+  value ? new Date(`${value}T12:00:00`).toISOString() : undefined;
+
 function FumigationLots({ values, onChange }) {
   const update = (index, value) =>
     onChange(
@@ -222,13 +228,21 @@ export function NewReport() {
             }
           : {};
       const fotos = await Promise.all(files.map(api.upload));
-      const dataTratamento = dataValue
-        ? new Date(`${dataValue}T12:00:00`).toISOString()
-        : new Date().toISOString();
+      const dataTratamento = dateToIso(dataValue) || new Date().toISOString();
+      const dataInicio =
+        controle === "Fumigação"
+          ? dateToIso(valueOf(form.dadosAtividade, fumigationStartDateId))
+          : undefined;
+      const dataFim =
+        controle === "Fumigação"
+          ? dateToIso(valueOf(form.dadosAtividade, fumigationEndDateId))
+          : undefined;
       const item = await api.criar({
         empresa: empresaRelatorio,
         assinaturaIds: form.assinaturaIds,
         dataTratamento,
+        dataInicio,
+        dataFim,
         lotes:
           controle === "Fumigação"
             ? fumigationLotes.map((lote) => lote.trim()).filter(Boolean)
@@ -424,10 +438,30 @@ export function NewReport() {
         {controle && (
           <FormSection number="03" title={sectionName || controle}>
             {sectionName === "Fumigação" && (
-              <FumigationLots
-                values={fumigationLotes}
-                onChange={setFumigationLotes}
-              />
+              <>
+                <FumigationLots
+                  values={fumigationLotes}
+                  onChange={setFumigationLotes}
+                />
+                <div className="dynamic-grid">
+                  <Field
+                    label="Data início *"
+                    type="date"
+                    value={valueOf(form.dadosAtividade, fumigationStartDateId)}
+                    onChange={(value) =>
+                      setActivity(fumigationStartDateId, value)
+                    }
+                    required
+                  />
+                  <Field
+                    label="Data fim *"
+                    type="date"
+                    value={valueOf(form.dadosAtividade, fumigationEndDateId)}
+                    onChange={(value) => setActivity(fumigationEndDateId, value)}
+                    required
+                  />
+                </div>
+              </>
             )}
             {sectionName === "Isca roedores - Ratol / GS" && (
               <div className="field-help">

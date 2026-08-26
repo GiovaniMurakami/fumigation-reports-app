@@ -3,6 +3,10 @@ export const formatDate = (value) => new Intl.DateTimeFormat("pt-BR", {
   timeStyle: "short",
 }).format(new Date(value));
 
+export const formatDateOnly = (value) => new Intl.DateTimeFormat("pt-BR", {
+  dateStyle: "medium",
+}).format(new Date(value));
+
 export const valueOf = (values, entryId) => values[entryId] || "";
 
 export const formatValue = (value) => {
