@@ -118,12 +118,14 @@ export function NewReport() {
   );
   const dataValue = valueOf(form.dadosIniciais, "entry.1365655116");
   const userRole = auth?.usuario?.role;
-  const userEmpresa = auth?.usuario?.empresa || "";
-  const isGlobalAdmin = userRole === "admin" && !userEmpresa;
-  const canWrite =
-    isGlobalAdmin ||
-    (Boolean(userEmpresa) &&
-      (userRole === "admin" || userRole === "funcionario"));
+  const userEmpresas = [
+    ...new Set([
+      ...(Array.isArray(auth?.usuario?.empresas) ? auth.usuario.empresas : []),
+      auth?.usuario?.empresa,
+    ].map((empresa) => empresa?.trim()).filter(Boolean)),
+  ];
+  const userEmpresa = userEmpresas.length === 1 ? userEmpresas[0] : "";
+  const canWrite = userRole === "admin" || userRole === "funcionario";
   const empresaRelatorio = userEmpresa || form.empresa;
   const empresaSelecionada =
     empresas.find((empresa) => empresa.nome === empresaRelatorio) || null;
@@ -276,20 +278,6 @@ export function NewReport() {
     }
   }
 
-  if (!userEmpresa && !isGlobalAdmin)
-    return (
-      <Layout>
-        <button className="back" onClick={() => navigate("/")}>
-          ← Voltar aos relatórios
-        </button>
-        <div className="empty">
-          <b>Empresa não vinculada</b>
-          <span>
-            Associe este usuário a uma empresa antes de cadastrar relatórios.
-          </span>
-        </div>
-      </Layout>
-    );
   if (!canWrite)
     return (
       <Layout>

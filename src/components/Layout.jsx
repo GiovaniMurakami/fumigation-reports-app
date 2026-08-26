@@ -9,6 +9,16 @@ export function Layout({ children }) {
   const navigate = useNavigate();
   const [navOpen, setNavOpen] = useState(false);
   const isAdmin = auth?.usuario?.role === "admin";
+  const empresas = [
+    ...new Set([
+      ...(Array.isArray(auth?.usuario?.empresas) ? auth.usuario.empresas : []),
+      auth?.usuario?.empresa,
+    ].map((empresa) => empresa?.trim()).filter(Boolean)),
+  ];
+  const empresaResumo =
+    empresas.length > 1
+      ? `${empresas.length} empresas`
+      : empresas[0] || (isAdmin || auth?.usuario?.role === "funcionario" ? "Todas as empresas" : "");
 
   return (
     <div className="app-shell">
@@ -39,7 +49,7 @@ export function Layout({ children }) {
             >
               <span>
                 Olá, <b>{auth.usuario.nome.split(" ")[0]}</b>
-                {auth.usuario.empresa ? ` · ${auth.usuario.empresa}` : ""}
+                {empresaResumo ? ` · ${empresaResumo}` : ""}
               </span>
               {isAdmin && (
                 <button

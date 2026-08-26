@@ -280,6 +280,72 @@ body {
   transform: none;
 }
 
+.user-actions {
+  grid-template-columns: minmax(260px, 1fr) 160px auto;
+}
+
+.company-picker {
+  min-width: 0;
+  margin: 0;
+  border: 0;
+  padding: 0;
+}
+
+.company-picker legend {
+  margin-bottom: 7px;
+  color: #35433a;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.company-picker p {
+  margin: -2px 0 8px;
+  color: var(--apple-secondary-label);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.company-options {
+  max-height: 150px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 7px;
+  overflow: auto;
+  padding-right: 4px;
+}
+
+.company-option {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid var(--apple-separator);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.72);
+  padding: 9px 10px;
+  color: var(--apple-label);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.company-option:hover {
+  border-color: rgba(20, 116, 60, 0.28);
+  background: #fff;
+}
+
+.company-option input {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 auto;
+  accent-color: var(--apple-tint);
+}
+
+.company-option span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 @media (max-width: 600px) {
   .pagination {
     display: grid;
@@ -295,6 +361,15 @@ body {
   .pagination-button {
     width: 100%;
     min-width: 0;
+  }
+
+  .user-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .company-options {
+    max-height: 220px;
+    grid-template-columns: 1fr;
   }
 }
 

@@ -45,14 +45,15 @@ export function Dashboard() {
   useEffect(() => {
     load("", 1);
   }, []);
-  const isGlobalAdmin =
-    auth?.usuario?.role === "admin" && !auth?.usuario?.empresa;
-  const hasCompany = Boolean(auth?.usuario?.empresa);
+  const userEmpresas = [
+    ...new Set([
+      ...(Array.isArray(auth?.usuario?.empresas) ? auth.usuario.empresas : []),
+      auth?.usuario?.empresa,
+    ].map((empresa) => empresa?.trim()).filter(Boolean)),
+  ];
+  const hasCompany = Boolean(userEmpresas.length);
   const canWrite =
-    isGlobalAdmin ||
-    (hasCompany &&
-      (auth?.usuario?.role === "admin" ||
-        auth?.usuario?.role === "funcionario"));
+    auth?.usuario?.role === "admin" || auth?.usuario?.role === "funcionario";
   return (
     <Layout>
       <div className="page-head">
@@ -67,7 +68,7 @@ export function Dashboard() {
           </button>
         )}
       </div>
-      {!isGlobalAdmin && !hasCompany ? (
+      {!canWrite && !hasCompany ? (
         <div className="notice">
           Seu usuário ainda não está vinculado a uma empresa.
         </div>
