@@ -6,7 +6,6 @@ export function Brand() {
         <span className="brand-name">
           BioSafe <em>Pest</em>
         </span>
-        <small>Serviços sanitários</small>
       </span>
     </span>
   );
