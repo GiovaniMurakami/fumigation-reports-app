@@ -10,18 +10,40 @@ export function Dashboard() {
   const { auth } = useAuth();
   const [items, setItems] = useState([]);
   const [query, setQuery] = useState("");
+  const [appliedQuery, setAppliedQuery] = useState("");
+  const [pagination, setPagination] = useState({
+    pagina: 1,
+    limite: 20,
+    total: 0,
+    totalPaginas: 0,
+    temProximaPagina: false,
+    temPaginaAnterior: false,
+  });
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
-  const load = async (lote = "") => {
+  const load = async (lote = appliedQuery, pagina = 1) => {
     setLoading(true);
     try {
-      setItems((await api.listar(lote)).itens);
+      const response = await api.listar({
+        lote,
+        pagina,
+        limite: pagination.limite,
+      });
+      setItems(response.itens || []);
+      setPagination(response.paginacao || {
+        pagina,
+        limite: pagination.limite,
+        total: response.itens?.length || 0,
+        totalPaginas: 1,
+        temProximaPagina: false,
+        temPaginaAnterior: pagina > 1,
+      });
     } finally {
       setLoading(false);
     }
   };
   useEffect(() => {
-    load();
+    load("", 1);
   }, []);
   const isGlobalAdmin =
     auth?.usuario?.role === "admin" && !auth?.usuario?.empresa;
@@ -60,7 +82,9 @@ export function Dashboard() {
         className="search"
         onSubmit={(e) => {
           e.preventDefault();
-          load(query);
+          const nextQuery = query.trim();
+          setAppliedQuery(nextQuery);
+          load(nextQuery, 1);
         }}
       >
         <span>⌕</span>
@@ -75,7 +99,7 @@ export function Dashboard() {
       <div className="section-title">
         <h2>Relatórios recentes</h2>
         <span>
-          {items.length} registro{items.length !== 1 && "s"}
+          {pagination.total} registro{pagination.total !== 1 && "s"}
         </span>
       </div>
       {loading ? (
@@ -86,50 +110,77 @@ export function Dashboard() {
           <span>Cadastre seu primeiro serviço ou altere a busca.</span>
         </div>
       ) : (
-        <div className="report-grid">
-          {items.map((item) => (
-            <article
-              className="report-card"
-              key={item.id}
-              onClick={() => navigate(`/relatorios/${item.id}`)}
-              tabIndex={0}
-              role="link"
-              onKeyDown={(event) => {
-                if (event.key === "Enter" || event.key === " ")
-                  navigate(`/relatorios/${item.id}`);
-              }}
-            >
-              {item.fotos[0]?.url ? (
-                <img src={item.fotos[0].url} alt="Evidência do serviço" />
-              ) : (
-                <div className="report-placeholder">
-                  <AppleIcon name="document" size={28} />
-                  <span>BioSafe Pest</span>
+        <>
+          <div className="report-grid">
+            {items.map((item) => (
+              <article
+                className="report-card"
+                key={item.id}
+                onClick={() => navigate(`/relatorios/${item.id}`)}
+                tabIndex={0}
+                role="link"
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" || event.key === " ")
+                    navigate(`/relatorios/${item.id}`);
+                }}
+              >
+                {item.fotos[0]?.url ? (
+                  <img src={item.fotos[0].url} alt="Evidência do serviço" />
+                ) : (
+                  <div className="report-placeholder">
+                    <AppleIcon name="document" size={28} />
+                    <span>BioSafe Pest</span>
+                  </div>
+                )}
+                <div>
+                  <div className="lot-list">
+                    <span className="lot">
+                      {item.numeroOs || item.lotes?.[0]}
+                    </span>
+                    {item.empresa && (
+                      <span className="lot alt">{item.empresa}</span>
+                    )}
+                  </div>
+                  <h3>{item.tipoControle || "Relatório de controle"}</h3>
+                  <p>
+                    {item.unidadeCliente ||
+                      item.areaSetor ||
+                      "Sem unidade informada"}
+                  </p>
+                  <footer>
+                    <span>{formatDate(item.dataTratamento)}</span>
+                    <b>Ver relatório →</b>
+                  </footer>
                 </div>
-              )}
-              <div>
-                <div className="lot-list">
-                  <span className="lot">
-                    {item.numeroOs || item.lotes?.[0]}
-                  </span>
-                  {item.empresa && (
-                    <span className="lot alt">{item.empresa}</span>
-                  )}
-                </div>
-                <h3>{item.tipoControle || "Relatório de controle"}</h3>
-                <p>
-                  {item.unidadeCliente ||
-                    item.areaSetor ||
-                    "Sem unidade informada"}
-                </p>
-                <footer>
-                  <span>{formatDate(item.dataTratamento)}</span>
-                  <b>Ver relatório →</b>
-                </footer>
-              </div>
-            </article>
-          ))}
-        </div>
+              </article>
+            ))}
+          </div>
+          {pagination.totalPaginas > 1 && (
+            <nav className="pagination" aria-label="Paginação de relatórios">
+              <button
+                className="secondary pagination-button"
+                disabled={loading || !pagination.temPaginaAnterior}
+                onClick={() => load(appliedQuery, pagination.pagina - 1)}
+                type="button"
+              >
+                <AppleIcon name="chevronLeft" size={17} />
+                Anterior
+              </button>
+              <span>
+                Página {pagination.pagina} de {pagination.totalPaginas}
+              </span>
+              <button
+                className="secondary pagination-button"
+                disabled={loading || !pagination.temProximaPagina}
+                onClick={() => load(appliedQuery, pagination.pagina + 1)}
+                type="button"
+              >
+                Próxima
+                <AppleIcon name="chevronRight" size={17} />
+              </button>
+            </nav>
+          )}
+        </>
       )}
     </Layout>
   );

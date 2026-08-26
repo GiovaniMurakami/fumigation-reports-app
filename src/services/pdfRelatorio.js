@@ -74,6 +74,17 @@ const sectionTitle = (doc, title, y) => {
   return y + 8;
 };
 
+const drawImageContained = (doc, image, x, y, width, height) => {
+  const props = doc.getImageProperties(image);
+  const ratio = props.width / props.height;
+  const boxRatio = width / height;
+  const renderWidth = ratio > boxRatio ? width : height * ratio;
+  const renderHeight = ratio > boxRatio ? width / ratio : height;
+  const renderX = x + (width - renderWidth) / 2;
+  const renderY = y + (height - renderHeight) / 2;
+  doc.addImage(image, renderX, renderY, renderWidth, renderHeight, undefined, "FAST");
+};
+
 const header = (doc, title, identifier, logo) => {
   doc.setFillColor(...colors.dark).rect(0, 0, page.width, 32, "F");
   doc.setFillColor(...colors.lime).rect(0, 30.5, page.width, 1.5, "F");
@@ -166,7 +177,7 @@ const drawSignatures = (doc, signatures, images) => {
   signatures.forEach((signature, index) => {
     const top = y + index * 19;
     const x = 112;
-    if (images[index]) try { doc.addImage(images[index], x + 5, top, 72, 10, undefined, "FAST"); } catch { /* mantém identificação */ }
+    if (images[index]) try { drawImageContained(doc, images[index], x + 5, top, 72, 10); } catch { /* mantém identificação */ }
     doc.setDrawColor(156, 163, 175).line(x + 5, top + 11, 190, top + 11);
     doc.setTextColor(...colors.text).setFont("helvetica", "bold").setFontSize(6.5).text(signature.nome || "-", 151, top + 14, { align: "center" });
     doc.setTextColor(...colors.muted).setFont("helvetica", "normal").setFontSize(5.5).text(signature.cargo || "", 151, top + 17, { align: "center" });
@@ -176,7 +187,7 @@ const drawSignatures = (doc, signatures, images) => {
 
 const photoBox = (doc, photo, image, x, y, width, height, index) => {
   doc.setFillColor(...colors.light).setDrawColor(...colors.line).roundedRect(x, y, width, height, 1.5, 1.5, "FD");
-  if (image) try { doc.addImage(image, x + 1, y + 1, width - 2, height - 6, undefined, "FAST"); } catch { /* mantém legenda */ }
+  if (image) try { drawImageContained(doc, image, x + 1, y + 1, width - 2, height - 6); } catch { /* mantém legenda */ }
   doc.setTextColor(...colors.muted).setFont("helvetica", "normal").setFontSize(5).text(doc.splitTextToSize(photo.nome || `Foto ${index + 1}`, width - 4), x + width / 2, y + height - 3, { align: "center" });
 };
 

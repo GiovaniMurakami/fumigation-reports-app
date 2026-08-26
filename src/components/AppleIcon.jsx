@@ -39,6 +39,7 @@ export function AppleIcon({
       </>
     ),
     chevronRight: <path d="m9 18 6-6-6-6" />,
+    chevronLeft: <path d="m15 18-6-6 6-6" />,
     menu: (
       <>
         <path d="M4 7h16M4 12h16M4 17h16" />
