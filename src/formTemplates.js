@@ -76,6 +76,7 @@ export const formCatalog = {
         "Pulverização Manual",
         "Pulverização Mecanizada",
         "Fumigação",
+        "Carregamento",
         "Termonebulização",
         "Limpeza de armazém",
         "Serviços de manutenção"
@@ -127,6 +128,7 @@ export const formCatalog = {
     "Pulverização Manual",
     "Pulverização Mecanizada",
     "Fumigação",
+    "Carregamento",
     "Termonebulização",
     "Limpeza de armazém",
     "Serviços de manutenção"
@@ -141,11 +143,13 @@ export const formCatalog = {
     "Pulverização Manual": "Pulverização - Manual",
     "Pulverização Mecanizada": "Pulverização - Mecanizada",
     "Fumigação": "Fumigação",
+    "Carregamento": "Carregamento",
     "Termonebulização": "Termonebulização ",
     "Limpeza de armazém": "Controle e limpeza estrutural",
     "Serviços de manutenção": "Serviços de manutenção"
   },
   "sections": {
+    "Carregamento": [],
     "Captura de pombos": [
       {
         "section": "Captura de pombos",

@@ -120,6 +120,7 @@ export function Detail({ shared = false }) {
   const dados = Object.entries(item.dados || {}).filter(([, value]) =>
     formatValue(value),
   );
+  const isLoadingReport = item.tipoControle === "Carregamento";
   const selectedPhoto =
     selectedPhotoIndex == null ? null : item.fotos?.[selectedPhotoIndex];
   const photoKey = (photo, index) => photo.chave || photo.url || String(index);
@@ -192,18 +193,48 @@ export function Detail({ shared = false }) {
               <dt>Empresa</dt>
               <dd>{item.empresa || "-"}</dd>
             </div>
-            <div>
-              <dt>Unidade</dt>
-              <dd>{item.unidadeCliente || "-"}</dd>
-            </div>
-            <div>
-              <dt>Área / setor</dt>
-              <dd>{item.areaSetor || "-"}</dd>
-            </div>
-            <div>
-              <dt>Realizado por</dt>
-              <dd>{item.realizadoPor || "-"}</dd>
-            </div>
+            {!isLoadingReport && (
+              <div>
+                <dt>Unidade</dt>
+                <dd>{item.unidadeCliente || "-"}</dd>
+              </div>
+            )}
+            {item.cliente && (
+              <div>
+                <dt>Cliente</dt>
+                <dd>{item.cliente}</dd>
+              </div>
+            )}
+            {item.produto && (
+              <div>
+                <dt>Produto</dt>
+                <dd>{item.produto}</dd>
+              </div>
+            )}
+            {item.quantidade && (
+              <div>
+                <dt>Quantidade</dt>
+                <dd>{item.quantidade}</dd>
+              </div>
+            )}
+            {item.placaVeiculo && (
+              <div>
+                <dt>Placa do veículo</dt>
+                <dd>{item.placaVeiculo}</dd>
+              </div>
+            )}
+            {!isLoadingReport && (
+              <>
+                <div>
+                  <dt>Área / setor</dt>
+                  <dd>{item.areaSetor || "-"}</dd>
+                </div>
+                <div>
+                  <dt>Realizado por</dt>
+                  <dd>{item.realizadoPor || "-"}</dd>
+                </div>
+              </>
+            )}
             {item.dataInicio && (
               <div>
                 <dt>Data início</dt>

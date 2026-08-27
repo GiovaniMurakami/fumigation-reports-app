@@ -41,12 +41,15 @@ export const api = {
   salvarCadastrosGlobais: (body) => request("/cadastros-globais", { method: "PUT", body: JSON.stringify(body) }),
   listarFuncionarios: () => request("/funcionarios"),
   salvarFuncionarios: (body) => request("/funcionarios", { method: "PUT", body: JSON.stringify(body) }),
-  listar: ({ lote = "", pagina = 1, limite = 20 } = {}) => {
+  listarClientes: () => request("/clientes"),
+  salvarClientes: (body) => request("/clientes", { method: "PUT", body: JSON.stringify(body) }),
+  listar: ({ lote = "", dataOs = "", pagina = 1, limite = 20 } = {}) => {
     const params = new URLSearchParams({
       pagina: String(pagina),
       limite: String(limite),
     });
     if (lote) params.set("lote", lote);
+    if (dataOs) params.set("dataOs", dataOs);
     return request(`/relatorios?${params.toString()}`);
   },
   buscar: (id) => request(`/relatorios/${id}`),

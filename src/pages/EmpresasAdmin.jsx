@@ -11,6 +11,7 @@ const emptyGlobais = { assinaturas: [] };
 const normalizeList = (items) => items?.length ? items : [""];
 const cleanItems = (items) => [...new Set((items || []).map(item => item.trim()).filter(Boolean))];
 const assinaturaPreviewUrl = url => url ? `${apiBaseUrl}/imagens/proxy?url=${encodeURIComponent(url)}` : "";
+const nomeArquivo = file => (file?.name || "Assinatura").replace(/\.[^.]+$/, "").trim().slice(0, 120) || "Assinatura";
 
 function ChipTextList({ label, values, onChange, placeholder, emptyText, draftValue, onDraftChange }) {
   const [localDraft, setLocalDraft] = useState("");
@@ -78,19 +79,23 @@ export function EmpresasAdmin() {
   const [globaisForm, setGlobaisForm] = useState(emptyGlobais);
   const [funcionariosForm, setFuncionariosForm] = useState([""]);
   const [funcionarioDraft, setFuncionarioDraft] = useState("");
+  const [clientesForm, setClientesForm] = useState([""]);
+  const [clienteDraft, setClienteDraft] = useState("");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [busy, setBusy] = useState(false);
 
   const load = async () => {
-    const [empresasData, globaisData, funcionariosData] = await Promise.all([
+    const [empresasData, globaisData, funcionariosData, clientesData] = await Promise.all([
       api.listarEmpresas(),
       api.obterCadastrosGlobais(),
       api.listarFuncionarios(),
+      api.listarClientes(),
     ]);
     setEmpresas(empresasData.itens || []);
     setGlobaisForm({ assinaturas: globaisData.cadastro?.assinaturas || [] });
     setFuncionariosForm(normalizeList((funcionariosData.itens || []).map(funcionario => funcionario.nome)));
+    setClientesForm(normalizeList((clientesData.itens || []).map(cliente => cliente.nome)));
   };
 
   useEffect(() => {
@@ -103,10 +108,6 @@ export function EmpresasAdmin() {
     nome: empresaForm.nome,
     unidades: cleanItems(empresaForm.unidades),
     areasSetores: cleanItems(empresaForm.areasSetores),
-  });
-
-  const globaisPayload = () => ({
-    assinaturas: globaisForm.assinaturas,
   });
 
   const selectEmpresa = (empresa) => {
@@ -145,35 +146,68 @@ export function EmpresasAdmin() {
     }
   }
 
-  async function salvarFuncionarios(e) {
-    e.preventDefault();
+  async function persistirFuncionarios(funcionarios, mensagem) {
     setBusy(true);
     setError("");
     setSuccess("");
     try {
-      const funcionarios = cleanItems([...funcionariosForm, funcionarioDraft]);
-      await api.salvarFuncionarios({ funcionarios });
-      await load();
+      const data = await api.salvarFuncionarios({ funcionarios: cleanItems(funcionarios) });
+      setFuncionariosForm(normalizeList((data.itens || []).map(funcionario => funcionario.nome)));
       setFuncionarioDraft("");
-      setSuccess("Funcionários salvos.");
+      setSuccess(mensagem);
     } catch (err) {
       setError(err.message);
+      await load().catch(() => {});
     } finally {
       setBusy(false);
     }
   }
 
-  async function salvarGlobais(e) {
-    e.preventDefault();
+  async function adicionarFuncionario(funcionarios) {
+    await persistirFuncionarios(funcionarios, "Funcionário adicionado.");
+  }
+
+  async function persistirClientes(clientes, mensagem) {
     setBusy(true);
     setError("");
     setSuccess("");
     try {
-      await api.salvarCadastrosGlobais(globaisPayload());
-      await load();
-      setSuccess("Assinaturas salvas.");
+      const data = await api.salvarClientes({ clientes: cleanItems(clientes) });
+      setClientesForm(normalizeList((data.itens || []).map(cliente => cliente.nome)));
+      setClienteDraft("");
+      setSuccess(mensagem);
     } catch (err) {
       setError(err.message);
+      await load().catch(() => {});
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function adicionarCliente(clientes) {
+    await persistirClientes(clientes, "Cliente adicionado.");
+  }
+
+  async function persistirAssinaturas(assinaturas, mensagem) {
+    const assinaturasValidas = assinaturas.map(assinatura => ({
+      ...assinatura,
+      nome: (assinatura.nome || "").trim(),
+      cargo: (assinatura.cargo || "").trim(),
+    }));
+    if (assinaturasValidas.some(assinatura => assinatura.nome.length < 2)) {
+      setError("Informe um nome com pelo menos 2 caracteres para a assinatura.");
+      return;
+    }
+    setBusy(true);
+    setError("");
+    setSuccess("");
+    try {
+      const data = await api.salvarCadastrosGlobais({ assinaturas: assinaturasValidas });
+      setGlobaisForm({ assinaturas: data.cadastro?.assinaturas || [] });
+      setSuccess(mensagem);
+    } catch (err) {
+      setError(err.message);
+      await load().catch(() => {});
     } finally {
       setBusy(false);
     }
@@ -185,7 +219,10 @@ export function EmpresasAdmin() {
     setError("");
     try {
       const uploaded = await api.upload(file);
-      setGlobaisForm(current => ({ ...current, assinaturas: [...current.assinaturas, { ...uploaded, nome: "", cargo: "" }] }));
+      const assinatura = { ...uploaded, nome: nomeArquivo(file), cargo: "" };
+      const assinaturas = [...globaisForm.assinaturas, assinatura];
+      setGlobaisForm({ assinaturas });
+      await persistirAssinaturas(assinaturas, "Assinatura adicionada.");
     } catch (err) {
       setError(err.message);
     } finally {
@@ -196,19 +233,13 @@ export function EmpresasAdmin() {
   async function removerFuncionario(funcionarios, action) {
     setFuncionariosForm(funcionarios);
     if (!action?.removed) return;
-    setBusy(true);
-    setError("");
-    setSuccess("");
-    try {
-      const data = await api.salvarFuncionarios({ funcionarios: cleanItems(funcionarios) });
-      setFuncionariosForm(normalizeList((data.itens || []).map(funcionario => funcionario.nome)));
-      setSuccess(`Funcionario "${action.removed}" removido.`);
-    } catch (err) {
-      setError(err.message);
-      await load().catch(() => {});
-    } finally {
-      setBusy(false);
-    }
+    await persistirFuncionarios(funcionarios, `Funcionario "${action.removed}" removido.`);
+  }
+
+  async function removerCliente(clientes, action) {
+    setClientesForm(clientes);
+    if (!action?.removed) return;
+    await persistirClientes(clientes, `Cliente "${action.removed}" removido.`);
   }
 
   const updateAssinatura = (index, patch) => setGlobaisForm(current => ({
@@ -216,23 +247,15 @@ export function EmpresasAdmin() {
     assinaturas: current.assinaturas.map((assinatura, itemIndex) => itemIndex === index ? { ...assinatura, ...patch } : assinatura),
   }));
 
+  const salvarAssinaturaAtual = async () => {
+    await persistirAssinaturas(globaisForm.assinaturas, "Assinatura atualizada.");
+  };
+
   async function removerAssinatura(index) {
     const assinatura = globaisForm.assinaturas[index];
     const assinaturas = globaisForm.assinaturas.filter((_, itemIndex) => itemIndex !== index);
     setGlobaisForm(current => ({ ...current, assinaturas }));
-    setBusy(true);
-    setError("");
-    setSuccess("");
-    try {
-      const data = await api.salvarCadastrosGlobais({ assinaturas });
-      setGlobaisForm({ assinaturas: data.cadastro?.assinaturas || [] });
-      setSuccess(`Assinatura${assinatura?.nome ? ` de "${assinatura.nome}"` : ""} removida.`);
-    } catch (err) {
-      setError(err.message);
-      await load().catch(() => {});
-    } finally {
-      setBusy(false);
-    }
+    await persistirAssinaturas(assinaturas, `Assinatura${assinatura?.nome ? ` de "${assinatura.nome}"` : ""} removida.`);
   }
 
   return (
@@ -282,23 +305,33 @@ export function EmpresasAdmin() {
             </div>
           </form>
 
-          <form className="detail-card" onSubmit={salvarFuncionarios}>
+          <section className="detail-card">
             <h2>Funcionários</h2>
             <ChipTextList
               label="Funcionário"
               values={funcionariosForm}
-              onChange={removerFuncionario}
+              onChange={(funcionarios, action) => action?.removed ? removerFuncionario(funcionarios, action) : adicionarFuncionario(funcionarios)}
               draftValue={funcionarioDraft}
               onDraftChange={setFuncionarioDraft}
               placeholder="Nome do funcionário"
               emptyText="Nenhum funcionário cadastrado."
             />
-            <div className="form-actions">
-              <button className="primary" disabled={busy}>{busy ? "Salvando..." : "Salvar funcionários"}</button>
-            </div>
-          </form>
+          </section>
 
-          <form className="detail-card" onSubmit={salvarGlobais}>
+          <section className="detail-card">
+            <h2>Clientes</h2>
+            <ChipTextList
+              label="Cliente"
+              values={clientesForm}
+              onChange={(clientes, action) => action?.removed ? removerCliente(clientes, action) : adicionarCliente(clientes)}
+              draftValue={clienteDraft}
+              onDraftChange={setClienteDraft}
+              placeholder="Nome do cliente"
+              emptyText="Nenhum cliente cadastrado."
+            />
+          </section>
+
+          <section className="detail-card">
             <h2>Assinaturas</h2>
             <section className="signature-box compact-signature-box">
               <div className="chip-editor-head">
@@ -319,8 +352,8 @@ export function EmpresasAdmin() {
                     {globaisForm.assinaturas.map((assinatura, index) => (
                       <div className="signature-item compact-signature-item" key={assinatura.chave || index}>
                         {assinatura.url && <img src={assinaturaPreviewUrl(assinatura.url)} alt={`Assinatura de ${assinatura.nome || "responsável"}`} />}
-                        <Field label="Nome" value={assinatura.nome || ""} onChange={nome => updateAssinatura(index, { nome })} required />
-                        <Field label="Cargo" value={assinatura.cargo || ""} onChange={cargo => updateAssinatura(index, { cargo })} />
+                        <Field label="Nome" value={assinatura.nome || ""} onChange={nome => updateAssinatura(index, { nome })} onBlur={salvarAssinaturaAtual} required />
+                        <Field label="Cargo" value={assinatura.cargo || ""} onChange={cargo => updateAssinatura(index, { cargo })} onBlur={salvarAssinaturaAtual} />
                         <button type="button" className="link" disabled={busy} onClick={() => removerAssinatura(index)}>Remover</button>
                       </div>
                     ))}
@@ -328,10 +361,7 @@ export function EmpresasAdmin() {
                 )}
               </div>
             </section>
-            <div className="form-actions">
-              <button className="primary" disabled={busy}>{busy ? "Salvando..." : "Salvar assinaturas"}</button>
-            </div>
-          </form>
+          </section>
         </div>
       </div>
     </Layout>

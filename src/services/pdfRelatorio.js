@@ -14,6 +14,7 @@ const titleByType = {
   "Pulverização Manual": "RELATÓRIO DE REALIZAÇÃO DE SERVIÇO DE PULVERIZAÇÃO",
   "Pulverização Mecanizada": "RELATÓRIO DE REALIZAÇÃO DE SERVIÇO DE PULVERIZAÇÃO MECANIZADA",
   "Fumigação": "RELATÓRIO DE FUMIGAÇÃO",
+  "Carregamento": "RELATÓRIO DE CARREGAMENTO",
   "Termonebulização": "RELATÓRIO DE TERMONEBULIZAÇÃO",
   "Limpeza de armazém": "RELATÓRIO DE LIMPEZA DE ARMAZÉM",
   "Serviços de manutenção": "RELATÓRIO DE SERVIÇO DE MANUTENÇÃO",
@@ -101,11 +102,15 @@ const header = (doc, title, identifier, logo) => {
 };
 
 const identification = (doc, item, startY) => {
+  const isLoadingReport = item.tipoControle === "Carregamento";
   const fields = [
     ["EMPRESA", item.empresa],
-    ["CLIENTE / UNIDADE", item.unidadeCliente || item.formularioTitulo],
-    ["ÁREA / SETOR", item.areaSetor],
-    ["REALIZADO POR", item.realizadoPor],
+    ...(!isLoadingReport ? [["CLIENTE / UNIDADE", item.unidadeCliente || item.formularioTitulo]] : []),
+    ...(item.cliente ? [["CLIENTE", item.cliente]] : []),
+    ...(item.produto ? [["PRODUTO", item.produto]] : []),
+    ...(item.quantidade ? [["QUANTIDADE", item.quantidade]] : []),
+    ...(item.placaVeiculo ? [["PLACA DO VEÍCULO", item.placaVeiculo]] : []),
+    ...(!isLoadingReport ? [["ÁREA / SETOR", item.areaSetor], ["REALIZADO POR", item.realizadoPor]] : []),
     ["DATA", formatDate(item.dataTratamento)],
     ["TIPO DE CONTROLE", item.tipoControle],
     ...(item.dataInicio ? [["DATA INÍCIO", formatDateOnly(item.dataInicio)]] : []),

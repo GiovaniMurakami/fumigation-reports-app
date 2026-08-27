@@ -54,7 +54,13 @@ function ProductPicker({ field, label, value, onChange, required, multiple }) {
   );
 }
 
-export function DynamicField({ field, value, onChange, required }) {
+const todayValue = () => {
+  const today = new Date();
+  const timezoneOffset = today.getTimezoneOffset() * 60000;
+  return new Date(today.getTime() - timezoneOffset).toISOString().slice(0, 10);
+};
+
+export function DynamicField({ field, value, onChange, required, withToday }) {
   const label = fieldLabel(field);
   if (field.type === "caixas_de_selecao") {
     if (isProductField(label)) return <ProductPicker field={field} label={label} value={value} onChange={onChange} required={required} multiple />;
@@ -66,7 +72,20 @@ export function DynamicField({ field, value, onChange, required }) {
     return <label className="field"><span>{label}{required && " *"}</span><select value={value} required={required} onChange={e => onChange(field.entryId, e.target.value)}><option value="">Selecione</option>{field.options.map(option => <option key={option} value={option}>{option}</option>)}</select>{field.description && <small>{field.description}</small>}</label>;
   }
   if (field.type === "paragrafo") return <Field label={`${label}${required ? " *" : ""}`} as="textarea" rows="4" value={value} onChange={val => onChange(field.entryId, val)} required={required}/>;
-  if (field.type === "data") return <Field label={`${label}${required ? " *" : ""}`} type="date" value={value} onChange={val => onChange(field.entryId, val)} required={required}/>;
+  if (field.type === "data") {
+    if (withToday) {
+      return (
+        <div className="field">
+          <span>{label}{required && " *"}</span>
+          <div className="date-today-row">
+            <input type="date" value={value} onChange={event => onChange(field.entryId, event.target.value)} required={required} />
+            <button type="button" className="today-button" onClick={() => onChange(field.entryId, todayValue())}>Hoje</button>
+          </div>
+        </div>
+      );
+    }
+    return <Field label={`${label}${required ? " *" : ""}`} type="date" value={value} onChange={val => onChange(field.entryId, val)} required={required}/>;
+  }
   if (field.type === "hora") return <Field label={`${label}${required ? " *" : ""}`} type="time" value={value} onChange={val => onChange(field.entryId, val)} required={required}/>;
   return <Field label={`${label}${required ? " *" : ""}`} value={value} onChange={val => onChange(field.entryId, val)} required={required}/>;
 }

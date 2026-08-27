@@ -47,6 +47,10 @@ export const shouldHideField = (field, sectionName) => {
   if (sectionName === "Captura de pombos" && label === "Quantidade capturado") return true;
   if (sectionName === "Captura de ninhos" && isNestCaptureDetail(field)) return true;
   if (sectionName === "Isca roedores - Ratol / GS" && isRodentBaitPoint(field)) return true;
+  if (
+    ["Controle e limpeza estrutural", "Serviços de manutenção"].includes(sectionName) &&
+    field.options?.includes("Enviar OS")
+  ) return true;
   if (field.options?.includes("Finalizar registro") && field.options?.includes("Complementar o registro")) return true;
   if (label.includes("Adicionar captura de ninhos") || label.includes("Adicionar captura de pombos")) return true;
   if (label === "Registro ultimo porta isca") return true;

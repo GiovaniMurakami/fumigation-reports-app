@@ -11,6 +11,8 @@ export function Dashboard() {
   const [items, setItems] = useState([]);
   const [query, setQuery] = useState("");
   const [appliedQuery, setAppliedQuery] = useState("");
+  const [dataOs, setDataOs] = useState("");
+  const [appliedDataOs, setAppliedDataOs] = useState("");
   const [pagination, setPagination] = useState({
     pagina: 1,
     limite: 20,
@@ -21,11 +23,12 @@ export function Dashboard() {
   });
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
-  const load = async (lote = appliedQuery, pagina = 1) => {
+  const load = async (lote = appliedQuery, pagina = 1, dataOsFiltro = appliedDataOs) => {
     setLoading(true);
     try {
       const response = await api.listar({
         lote,
+        dataOs: dataOsFiltro,
         pagina,
         limite: pagination.limite,
       });
@@ -43,7 +46,7 @@ export function Dashboard() {
     }
   };
   useEffect(() => {
-    load("", 1);
+    load("", 1, "");
   }, []);
   const userEmpresas = [
     ...new Set([
@@ -84,16 +87,25 @@ export function Dashboard() {
         onSubmit={(e) => {
           e.preventDefault();
           const nextQuery = query.trim();
+          const nextDataOs = dataOs;
           setAppliedQuery(nextQuery);
-          load(nextQuery, 1);
+          setAppliedDataOs(nextDataOs);
+          load(nextQuery, 1, nextDataOs);
         }}
       >
         <span>⌕</span>
         <input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="Buscar por O.S., tipo, unidade ou lote"
+          placeholder="Buscar por O.S., tipo, unidade, cliente, produto, quantidade, placa ou lote"
           aria-label="Buscar relat?rios"
+        />
+        <input
+          type="date"
+          value={dataOs}
+          onChange={(e) => setDataOs(e.target.value)}
+          aria-label="Filtrar por data da O.S."
+          title="Data da O.S."
         />
         <button>Buscar</button>
       </form>
@@ -144,7 +156,11 @@ export function Dashboard() {
                   </div>
                   <h3>{item.tipoControle || "Relatório de controle"}</h3>
                   <p>
-                    {item.unidadeCliente ||
+                    {item.cliente ||
+                      item.produto ||
+                      item.quantidade ||
+                      item.placaVeiculo ||
+                      item.unidadeCliente ||
                       item.areaSetor ||
                       "Sem unidade informada"}
                   </p>
@@ -161,7 +177,7 @@ export function Dashboard() {
               <button
                 className="secondary pagination-button"
                 disabled={loading || !pagination.temPaginaAnterior}
-                onClick={() => load(appliedQuery, pagination.pagina - 1)}
+                onClick={() => load(appliedQuery, pagination.pagina - 1, appliedDataOs)}
                 type="button"
               >
                 <AppleIcon name="chevronLeft" size={17} />
@@ -173,7 +189,7 @@ export function Dashboard() {
               <button
                 className="secondary pagination-button"
                 disabled={loading || !pagination.temProximaPagina}
-                onClick={() => load(appliedQuery, pagination.pagina + 1)}
+                onClick={() => load(appliedQuery, pagination.pagina + 1, appliedDataOs)}
                 type="button"
               >
                 Próxima

@@ -63,11 +63,10 @@ function FumigationLots({ values, onChange }) {
       {values.map((lote, index) => (
         <div className="lote-row" key={index}>
           <Field
-            label={`Lote ${index + 1} *`}
+            label={`Lote ${index + 1}`}
             value={lote}
             onChange={(value) => update(index, value)}
             placeholder="Ex.: LT-2026-0842"
-            required
           />
           {values.length > 1 && (
             <button
@@ -98,6 +97,7 @@ export function NewReport() {
   const [empresas, setEmpresas] = useState([]);
   const [cadastrosGlobais, setCadastrosGlobais] = useState({ assinaturas: [] });
   const [funcionarios, setFuncionarios] = useState([]);
+  const [clientes, setClientes] = useState([]);
   const [files, setFiles] = useState([]);
   const [uploadProgress, setUploadProgress] = useState(null);
   const [repeatableValues, setRepeatableValues] = useState({});
@@ -116,7 +116,9 @@ export function NewReport() {
       dadosAtividade: { ...form.dadosAtividade, [entryId]: value },
     });
   const controle = valueOf(form.dadosIniciais, "entry.1424091944");
+  const isLoadingReport = controle === "Carregamento";
   const sectionName = formCatalog.controlToSection[controle];
+  const hasLotes = sectionName === "Fumigação" || sectionName === "Carregamento";
   const rawActivityFields = sectionName
     ? formCatalog.sections[sectionName] || []
     : [];
@@ -132,6 +134,7 @@ export function NewReport() {
   const initialFields = formCatalog.initialFields.filter(
     (field) =>
       field.entryId !== "entry.2017707091" &&
+      field.entryId !== "entry.1424091944" &&
       !masterFieldIds.has(field.entryId),
   );
   const dataValue = valueOf(form.dadosIniciais, "entry.1365655116");
@@ -157,16 +160,19 @@ export function NewReport() {
       api.listarEmpresas(),
       api.obterCadastrosGlobais(),
       api.listarFuncionarios(),
+      api.listarClientes(),
     ])
-      .then(([empresasData, globaisData, funcionariosData]) => {
+      .then(([empresasData, globaisData, funcionariosData, clientesData]) => {
         setEmpresas(empresasData.itens || []);
         setCadastrosGlobais(globaisData.cadastro || { assinaturas: [] });
         setFuncionarios(funcionariosData.itens || []);
+        setClientes(clientesData.itens || []);
       })
       .catch(() => {
         setEmpresas([]);
         setCadastrosGlobais({ assinaturas: [] });
         setFuncionarios([]);
+        setClientes([]);
       });
   }, []);
 
@@ -178,10 +184,6 @@ export function NewReport() {
     }
     if (!canWrite) {
       setError("Seu perfil possui apenas permissão de leitura.");
-      return;
-    }
-    if (controle === "Fumigação" && !files.length) {
-      setError("Selecione ao menos uma foto como evidência.");
       return;
     }
     setBusy(true);
@@ -260,32 +262,60 @@ export function NewReport() {
         controle === "Fumigação"
           ? dateToIso(valueOf(form.dadosAtividade, fumigationEndDateId))
           : undefined;
+      const lotesRelatorio = hasLotes
+        ? fumigationLotes.map((lote) => lote.trim()).filter(Boolean)
+        : [];
       const item = await api.criar({
         empresa: empresaRelatorio,
         assinaturaIds: form.assinaturaIds,
+        cliente:
+          controle === "Carregamento"
+            ? valueOf(form.dadosAtividade, "carregamento_cliente")
+            : undefined,
+        produto:
+          controle === "Carregamento"
+            ? valueOf(form.dadosAtividade, "carregamento_produto")
+            : undefined,
+        quantidade:
+          controle === "Carregamento"
+            ? valueOf(form.dadosAtividade, "carregamento_quantidade")
+            : undefined,
+        placaVeiculo:
+          controle === "Carregamento"
+            ? valueOf(form.dadosAtividade, "carregamento_placa_veiculo")
+            : undefined,
         dataTratamento,
         dataInicio,
         dataFim,
-        lotes:
-          controle === "Fumigação"
-            ? fumigationLotes.map((lote) => lote.trim()).filter(Boolean)
-            : undefined,
+        lotes: hasLotes ? lotesRelatorio : undefined,
         formularioTitulo: formCatalog.formTitle,
-        unidadeCliente: valueOf(form.dadosIniciais, "entry.1721614377"),
-        areaSetor: valueOf(form.dadosIniciais, "entry.1994831449"),
+        unidadeCliente: isLoadingReport
+          ? undefined
+          : valueOf(form.dadosIniciais, "entry.1721614377"),
+        areaSetor: isLoadingReport
+          ? undefined
+          : valueOf(form.dadosIniciais, "entry.1994831449"),
         tipoControle: controle,
-        realizadoPor: valueOf(form.dadosIniciais, "entry.558955180"),
+        realizadoPor: isLoadingReport
+          ? undefined
+          : valueOf(form.dadosIniciais, "entry.558955180"),
         dados: {
           ...baseFields,
           ...dados,
           ...repeatableDados,
           ...nestDados,
           ...rodentDados,
-          ...(controle === "Fumigação"
+          ...(hasLotes
             ? {
-                Lotes: fumigationLotes
-                  .map((lote) => lote.trim())
-                  .filter(Boolean),
+                Lotes: lotesRelatorio,
+              }
+            : {}),
+          ...(controle === "Carregamento"
+            ? {
+                Cliente: valueOf(form.dadosAtividade, "carregamento_cliente"),
+                Produto: valueOf(form.dadosAtividade, "carregamento_produto"),
+                Quantidade: valueOf(form.dadosAtividade, "carregamento_quantidade"),
+                "Placa do veículo": valueOf(form.dadosAtividade, "carregamento_placa_veiculo"),
               }
             : {}),
         },
@@ -325,150 +355,168 @@ export function NewReport() {
         </p>
       </div>
       <form className="report-form" onSubmit={submit}>
-        <FormSection number="01" title="Empresa">
-          <label className="field">
-            <span>Empresa</span>
-            <select
-              value={form.empresa}
-              required
-              disabled={Boolean(userEmpresa)}
-              onChange={(e) =>
-                setForm({ ...form, empresa: e.target.value, assinaturaIds: [] })
-              }
-            >
-              <option value="">Selecione</option>
-              {empresas.map((empresa) => (
-                <option key={empresa.id} value={empresa.nome}>
-                  {empresa.nome}
-                </option>
-              ))}
-            </select>
-          </label>
-        </FormSection>
-        <FormSection number="02" title="Identificação">
+        <FormSection number="01" title="Empresa e controle">
           <div className="dynamic-grid">
             <label className="field">
-              <span>Unidade / Cliente *</span>
+              <span>Empresa</span>
               <select
-                value={valueOf(form.dadosIniciais, "entry.1721614377")}
+                value={form.empresa}
                 required
-                onChange={(e) => setInitial("entry.1721614377", e.target.value)}
+                disabled={Boolean(userEmpresa)}
+                onChange={(e) =>
+                  setForm({ ...form, empresa: e.target.value, assinaturaIds: [] })
+                }
               >
                 <option value="">Selecione</option>
-                {(empresaSelecionada?.unidades || []).map((item) => (
-                  <option key={item} value={item}>
-                    {item}
+                {empresas.map((empresa) => (
+                  <option key={empresa.id} value={empresa.nome}>
+                    {empresa.nome}
                   </option>
                 ))}
               </select>
             </label>
             <label className="field">
-              <span>Área / setor</span>
+              <span>Controle *</span>
               <select
-                value={valueOf(form.dadosIniciais, "entry.1994831449")}
-                onChange={(e) => setInitial("entry.1994831449", e.target.value)}
+                value={controle}
+                required
+                onChange={(e) => setInitial("entry.1424091944", e.target.value)}
               >
                 <option value="">Selecione</option>
-                {(empresaSelecionada?.areasSetores || []).map((item) => (
-                  <option key={item} value={item}>
-                    {item}
+                {formCatalog.controlOptions.map((option) => (
+                  <option key={option} value={option}>
+                    {option}
                   </option>
                 ))}
               </select>
             </label>
-            <label className="field">
-              <span>Realizado por</span>
-              <select
-                value={valueOf(form.dadosIniciais, "entry.558955180")}
-                onChange={(e) => setInitial("entry.558955180", e.target.value)}
-              >
-                <option value="">Selecione</option>
-                {funcionarios.map((funcionario) => (
-                  <option key={funcionario.id} value={funcionario.nome}>
-                    {funcionario.nome}
-                  </option>
-                ))}
-              </select>
-            </label>
-            {cadastrosGlobais.assinaturas?.length > 0 && (
-              <fieldset className="signature-picker">
-                <legend>Assinaturas no PDF</legend>
-                <p>Selecione quem deve aparecer no documento.</p>
-                <div className="signature-options">
-                  {cadastrosGlobais.assinaturas.map((assinatura) => (
-                    <label
-                      className={`signature-option${
-                        form.assinaturaIds.includes(assinatura.id)
-                          ? " selected"
-                          : ""
-                      }`}
-                      key={assinatura.id}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={form.assinaturaIds.includes(assinatura.id)}
-                        onChange={(event) =>
-                          setForm((current) => ({
-                            ...current,
-                            assinaturaIds: event.target.checked
-                              ? [...current.assinaturaIds, assinatura.id]
-                              : current.assinaturaIds.filter(
-                                  (id) => id !== assinatura.id,
-                                ),
-                          }))
-                        }
-                      />
-                      <span className="signature-check" aria-hidden="true">
-                        ?
-                      </span>
-                      <span className="signature-option-copy">
-                        <b>{assinatura.nome}</b>
-                        <small>{assinatura.cargo || "Assinante"}</small>
-                      </span>
-                    </label>
-                  ))}
-                </div>
-              </fieldset>
-            )}
           </div>
-          {initialFields.map((field) => (
-            <DynamicField
-              key={field.entryId}
-              field={field}
-              value={valueOf(form.dadosIniciais, field.entryId)}
-              onChange={setInitial}
-              required={
-                field.required ||
-                field.entryId === "entry.1424091944" ||
-                field.entryId === "entry.1365655116"
-              }
-            />
-          ))}
         </FormSection>
         {controle && (
+          <FormSection number="02" title="Identificação">
+            <div className="dynamic-grid">
+              {!isLoadingReport && (
+                <>
+                  <label className="field">
+                    <span>Unidade / Cliente</span>
+                    <select
+                      value={valueOf(form.dadosIniciais, "entry.1721614377")}
+                      onChange={(e) => setInitial("entry.1721614377", e.target.value)}
+                    >
+                      <option value="">Selecione</option>
+                      {(empresaSelecionada?.unidades || []).map((item) => (
+                        <option key={item} value={item}>
+                          {item}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label className="field">
+                    <span>Área / setor</span>
+                    <select
+                      value={valueOf(form.dadosIniciais, "entry.1994831449")}
+                      onChange={(e) => setInitial("entry.1994831449", e.target.value)}
+                    >
+                      <option value="">Selecione</option>
+                      {(empresaSelecionada?.areasSetores || []).map((item) => (
+                        <option key={item} value={item}>
+                          {item}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label className="field">
+                    <span>Realizado por</span>
+                    <select
+                      value={valueOf(form.dadosIniciais, "entry.558955180")}
+                      onChange={(e) => setInitial("entry.558955180", e.target.value)}
+                    >
+                      <option value="">Selecione</option>
+                      {funcionarios.map((funcionario) => (
+                        <option key={funcionario.id} value={funcionario.nome}>
+                          {funcionario.nome}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                </>
+              )}
+              {initialFields.map((field) => (
+                <DynamicField
+                  key={field.entryId}
+                  field={field}
+                  value={valueOf(form.dadosIniciais, field.entryId)}
+                  onChange={setInitial}
+                  withToday={field.entryId === "entry.1365655116"}
+                />
+              ))}
+              {cadastrosGlobais.assinaturas?.length > 0 && (
+                <fieldset className="signature-picker">
+                  <legend>Assinaturas no PDF</legend>
+                  <p>Selecione quem deve aparecer no documento.</p>
+                  <div className="signature-options">
+                    {cadastrosGlobais.assinaturas.map((assinatura) => (
+                      <label
+                        className={`signature-option${
+                          form.assinaturaIds.includes(assinatura.id)
+                            ? " selected"
+                            : ""
+                        }`}
+                        key={assinatura.id}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={form.assinaturaIds.includes(assinatura.id)}
+                          onChange={(event) =>
+                            setForm((current) => ({
+                              ...current,
+                              assinaturaIds: event.target.checked
+                                ? [...current.assinaturaIds, assinatura.id]
+                                : current.assinaturaIds.filter(
+                                    (id) => id !== assinatura.id,
+                                  ),
+                            }))
+                          }
+                        />
+                        <span className="signature-check" aria-hidden="true">
+                          ?
+                        </span>
+                        <span className="signature-option-copy">
+                          <b>{assinatura.nome}</b>
+                          <small>{assinatura.cargo || "Assinante"}</small>
+                        </span>
+                      </label>
+                    ))}
+                  </div>
+                </fieldset>
+              )}
+            </div>
+          </FormSection>
+        )}
+        {controle && (
           <FormSection number="03" title={sectionName || controle}>
+            {hasLotes && (
+              <FumigationLots
+                values={fumigationLotes}
+                onChange={setFumigationLotes}
+              />
+            )}
             {sectionName === "Fumigação" && (
               <>
-                <FumigationLots
-                  values={fumigationLotes}
-                  onChange={setFumigationLotes}
-                />
                 <div className="dynamic-grid">
                   <Field
-                    label="Data início *"
+                    label="Data início"
                     type="date"
                     value={valueOf(form.dadosAtividade, fumigationStartDateId)}
                     onChange={(value) =>
                       setActivity(fumigationStartDateId, value)
                     }
-                    required
                   />
                   <Field
-                    label="Data fim *"
+                    label="Data fim"
                     type="date"
                     value={valueOf(form.dadosAtividade, fumigationEndDateId)}
                     onChange={(value) => setActivity(fumigationEndDateId, value)}
-                    required
                   />
                 </div>
               </>
@@ -478,6 +526,41 @@ export function NewReport() {
                 {rodentStatusHelp.map((line) => (
                   <span key={line}>{line}</span>
                 ))}
+              </div>
+            )}
+            {sectionName === "Carregamento" && (
+              <div className="dynamic-grid">
+                <label className="field">
+                  <span>Cliente</span>
+                  <select
+                    value={valueOf(form.dadosAtividade, "carregamento_cliente")}
+                    onChange={(e) => setActivity("carregamento_cliente", e.target.value)}
+                  >
+                    <option value="">Selecione</option>
+                    {clientes.map((cliente) => (
+                      <option key={cliente.id} value={cliente.nome}>
+                        {cliente.nome}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <Field
+                  label="Produto"
+                  value={valueOf(form.dadosAtividade, "carregamento_produto")}
+                  onChange={(value) => setActivity("carregamento_produto", value)}
+                />
+                <Field
+                  label="Quantidade"
+                  value={valueOf(form.dadosAtividade, "carregamento_quantidade")}
+                  onChange={(value) => setActivity("carregamento_quantidade", value)}
+                  placeholder="Ex.: 24.000 kg"
+                />
+                <Field
+                  label="Placa do veículo"
+                  value={valueOf(form.dadosAtividade, "carregamento_placa_veiculo")}
+                  onChange={(value) => setActivity("carregamento_placa_veiculo", value.toUpperCase())}
+                  placeholder="Ex.: ABC1D23"
+                />
               </div>
             )}
             <div className="dynamic-grid">
@@ -539,38 +622,40 @@ export function NewReport() {
             )}
           </FormSection>
         )}
-        <FormSection number="04" title="Evidências fotográficas">
-          <label className="dropzone">
-            <b>Evidências fotográficas</b>
-            <span>JPG, PNG ou WebP • máximo 10 MB por foto</span>
-            <input
-              type="file"
-              accept="image/jpeg,image/png,image/webp"
-              multiple
-              onChange={(e) => setFiles(Array.from(e.target.files))}
-            />
-          </label>
-          {files.length > 0 && (
-            <>
-              <p className="muted file-count">
-                {files.length} foto{files.length !== 1 ? "s" : ""} selecionada
-                {files.length !== 1 ? "s" : ""}
-              </p>
-              <div className="file-list">
-                {files.map((file, index) => (
-                  <span key={`${file.name}-${file.size}-${file.lastModified}-${index}`}>
-                    {file.name}
-                  </span>
-                ))}
+        {controle && (
+          <FormSection number="04" title="Evidências fotográficas">
+            <label className="dropzone">
+              <b>Evidências fotográficas</b>
+              <span>JPG, PNG ou WebP • máximo 10 MB por foto</span>
+              <input
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                multiple
+                onChange={(e) => setFiles(Array.from(e.target.files))}
+              />
+            </label>
+            {files.length > 0 && (
+              <>
+                <p className="muted file-count">
+                  {files.length} foto{files.length !== 1 ? "s" : ""} selecionada
+                  {files.length !== 1 ? "s" : ""}
+                </p>
+                <div className="file-list">
+                  {files.map((file, index) => (
+                    <span key={`${file.name}-${file.size}-${file.lastModified}-${index}`}>
+                      {file.name}
+                    </span>
+                  ))}
+                </div>
+              </>
+            )}
+            {uploadProgress && (
+              <div className="notice">
+                Enviando fotos: {uploadProgress.done}/{uploadProgress.total}
               </div>
-            </>
-          )}
-          {uploadProgress && (
-            <div className="notice">
-              Enviando fotos: {uploadProgress.done}/{uploadProgress.total}
-            </div>
-          )}
-        </FormSection>
+            )}
+          </FormSection>
+        )}
         {error && <div className="error">{error}</div>}
         <div className="form-actions">
           <button
