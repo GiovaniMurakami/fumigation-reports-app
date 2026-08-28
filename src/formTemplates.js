@@ -72,7 +72,7 @@ export const formCatalog = {
         "Isca roedores - Ratol / GS",
         "Armadilhas luminósas",
         "Arm. Feromônio - Coleopterus",
-        "Arm. Feromônio - Epdópterus",
+        "Arm. Feromônio - Lepidópteros",
         "Pulverização Manual",
         "Pulverização Mecanizada",
         "Fumigação",
@@ -124,7 +124,7 @@ export const formCatalog = {
     "Isca roedores - Ratol / GS",
     "Armadilhas luminósas",
     "Arm. Feromônio - Coleopterus",
-    "Arm. Feromônio - Epdópterus",
+    "Arm. Feromônio - Lepidópteros",
     "Pulverização Manual",
     "Pulverização Mecanizada",
     "Fumigação",
@@ -139,7 +139,8 @@ export const formCatalog = {
     "Isca roedores - Ratol / GS": "Isca roedores - Ratol / GS",
     "Armadilhas luminósas": "Armadilhas luminosas ",
     "Arm. Feromônio - Coleopterus": "Armadilhas feromônio - Coleópterus",
-    "Arm. Feromônio - Epdópterus": "Armadilhas feromônio - Lepdópteros",
+    "Arm. Feromônio - Epdópterus": "Armadilhas feromônio - Lepidópteros",
+    "Arm. Feromônio - Lepidópteros": "Armadilhas feromônio - Lepidópteros",
     "Pulverização Manual": "Pulverização - Manual",
     "Pulverização Mecanizada": "Pulverização - Mecanizada",
     "Fumigação": "Fumigação",
@@ -2559,9 +2560,9 @@ export const formCatalog = {
         ]
       }
     ],
-    "Armadilhas feromônio - Lepdópteros": [
+    "Armadilhas feromônio - Lepidópteros": [
       {
-        "section": "Armadilhas feromônio - Lepdópteros",
+        "section": "Armadilhas feromônio - Lepidópteros",
         "label": "Isca 1",
         "row": "Epheshia Cautella",
         "description": null,
@@ -2579,7 +2580,7 @@ export const formCatalog = {
         ]
       },
       {
-        "section": "Armadilhas feromônio - Lepdópteros",
+        "section": "Armadilhas feromônio - Lepidópteros",
         "label": "Isca 1",
         "row": "Plodia Interpunctella",
         "description": null,
@@ -2597,7 +2598,7 @@ export const formCatalog = {
         ]
       },
       {
-        "section": "Armadilhas feromônio - Lepdópteros",
+        "section": "Armadilhas feromônio - Lepidópteros",
         "label": "Isca 1",
         "row": "Outros",
         "description": null,
@@ -2615,7 +2616,7 @@ export const formCatalog = {
         ]
       },
       {
-        "section": "Armadilhas feromônio - Lepdópteros",
+        "section": "Armadilhas feromônio - Lepidópteros",
         "label": "Isca 2",
         "row": "Epheshia Cautella",
         "description": null,
@@ -2633,7 +2634,7 @@ export const formCatalog = {
         ]
       },
       {
-        "section": "Armadilhas feromônio - Lepdópteros",
+        "section": "Armadilhas feromônio - Lepidópteros",
         "label": "Isca 2",
         "row": "Plodia Interpunctella",
         "description": null,
@@ -2651,7 +2652,7 @@ export const formCatalog = {
         ]
       },
       {
-        "section": "Armadilhas feromônio - Lepdópteros",
+        "section": "Armadilhas feromônio - Lepidópteros",
         "label": "Isca 2",
         "row": "Outros",
         "description": null,
@@ -2669,7 +2670,7 @@ export const formCatalog = {
         ]
       },
       {
-        "section": "Armadilhas feromônio - Lepdópteros",
+        "section": "Armadilhas feromônio - Lepidópteros",
         "label": "Isca 3",
         "row": "Epheshia Cautella",
         "description": null,
@@ -2687,7 +2688,7 @@ export const formCatalog = {
         ]
       },
       {
-        "section": "Armadilhas feromônio - Lepdópteros",
+        "section": "Armadilhas feromônio - Lepidópteros",
         "label": "Isca 3",
         "row": "Plodia Interpunctella",
         "description": null,
@@ -2705,7 +2706,7 @@ export const formCatalog = {
         ]
       },
       {
-        "section": "Armadilhas feromônio - Lepdópteros",
+        "section": "Armadilhas feromônio - Lepidópteros",
         "label": "Isca 3",
         "row": "Outros",
         "description": null,
@@ -2723,7 +2724,7 @@ export const formCatalog = {
         ]
       },
       {
-        "section": "Armadilhas feromônio - Lepdópteros",
+        "section": "Armadilhas feromônio - Lepidópteros",
         "label": "Isca 4",
         "row": "Epheshia Cautella",
         "description": null,
@@ -2741,7 +2742,7 @@ export const formCatalog = {
         ]
       },
       {
-        "section": "Armadilhas feromônio - Lepdópteros",
+        "section": "Armadilhas feromônio - Lepidópteros",
         "label": "Isca 4",
         "row": "Plodia Interpunctella",
         "description": null,
@@ -2759,7 +2760,7 @@ export const formCatalog = {
         ]
       },
       {
-        "section": "Armadilhas feromônio - Lepdópteros",
+        "section": "Armadilhas feromônio - Lepidópteros",
         "label": "Isca 4",
         "row": "Outros",
         "description": null,
@@ -2777,7 +2778,7 @@ export const formCatalog = {
         ]
       },
       {
-        "section": "Armadilhas feromônio - Lepdópteros",
+        "section": "Armadilhas feromônio - Lepidópteros",
         "label": "Isca 5",
         "row": "Epheshia Cautella",
         "description": null,
@@ -2795,7 +2796,7 @@ export const formCatalog = {
         ]
       },
       {
-        "section": "Armadilhas feromônio - Lepdópteros",
+        "section": "Armadilhas feromônio - Lepidópteros",
         "label": "Isca 5",
         "row": "Plodia Interpunctella",
         "description": null,
@@ -2813,7 +2814,7 @@ export const formCatalog = {
         ]
       },
       {
-        "section": "Armadilhas feromônio - Lepdópteros",
+        "section": "Armadilhas feromônio - Lepidópteros",
         "label": "Isca 5",
         "row": "Outros",
         "description": null,
@@ -2831,7 +2832,7 @@ export const formCatalog = {
         ]
       },
       {
-        "section": "Armadilhas feromônio - Lepdópteros",
+        "section": "Armadilhas feromônio - Lepidópteros",
         "label": "Isca 6",
         "row": "Epheshia Cautella",
         "description": null,
@@ -2849,7 +2850,7 @@ export const formCatalog = {
         ]
       },
       {
-        "section": "Armadilhas feromônio - Lepdópteros",
+        "section": "Armadilhas feromônio - Lepidópteros",
         "label": "Isca 6",
         "row": "Plodia Interpunctella",
         "description": null,
@@ -2867,7 +2868,7 @@ export const formCatalog = {
         ]
       },
       {
-        "section": "Armadilhas feromônio - Lepdópteros",
+        "section": "Armadilhas feromônio - Lepidópteros",
         "label": "Isca 6",
         "row": "Outros",
         "description": null,
@@ -2885,7 +2886,7 @@ export const formCatalog = {
         ]
       },
       {
-        "section": "Armadilhas feromônio - Lepdópteros",
+        "section": "Armadilhas feromônio - Lepidópteros",
         "label": "Isca 7",
         "row": "Epheshia Cautella",
         "description": null,
@@ -2903,7 +2904,7 @@ export const formCatalog = {
         ]
       },
       {
-        "section": "Armadilhas feromônio - Lepdópteros",
+        "section": "Armadilhas feromônio - Lepidópteros",
         "label": "Isca 7",
         "row": "Plodia Interpunctella",
         "description": null,
@@ -2921,7 +2922,7 @@ export const formCatalog = {
         ]
       },
       {
-        "section": "Armadilhas feromônio - Lepdópteros",
+        "section": "Armadilhas feromônio - Lepidópteros",
         "label": "Isca 7",
         "row": "Outros",
         "description": null,
@@ -2939,7 +2940,7 @@ export const formCatalog = {
         ]
       },
       {
-        "section": "Armadilhas feromônio - Lepdópteros",
+        "section": "Armadilhas feromônio - Lepidópteros",
         "label": "Isca 8",
         "row": "Epheshia Cautella",
         "description": null,
@@ -2957,7 +2958,7 @@ export const formCatalog = {
         ]
       },
       {
-        "section": "Armadilhas feromônio - Lepdópteros",
+        "section": "Armadilhas feromônio - Lepidópteros",
         "label": "Isca 8",
         "row": "Plodia Interpunctella",
         "description": null,
@@ -2975,7 +2976,7 @@ export const formCatalog = {
         ]
       },
       {
-        "section": "Armadilhas feromônio - Lepdópteros",
+        "section": "Armadilhas feromônio - Lepidópteros",
         "label": "Isca 8",
         "row": "Outros",
         "description": null,
@@ -2993,7 +2994,7 @@ export const formCatalog = {
         ]
       },
       {
-        "section": "Armadilhas feromônio - Lepdópteros",
+        "section": "Armadilhas feromônio - Lepidópteros",
         "label": null,
         "row": null,
         "description": null,

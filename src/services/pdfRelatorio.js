@@ -10,7 +10,8 @@ const titleByType = {
   "Isca roedores - Ratol / GS": "RELATÓRIO DE ISCAS PARA ROEDORES",
   "Armadilhas luminósas": "RELATÓRIO DE ARMADILHAS LUMINOSAS",
   "Arm. Feromônio - Coleopterus": "RELATÓRIO DE ARMADILHAS FEROMÔNIO - COLEÓPTERUS",
-  "Arm. Feromônio - Epdópterus": "RELATÓRIO DE ARMADILHAS FEROMÔNIO - LEPDÓPTEROS",
+  "Arm. Feromônio - Epdópterus": "RELATÓRIO DE ARMADILHAS FEROMÔNIO - LEPIDÓPTEROS",
+  "Arm. Feromônio - Lepidópteros": "RELATÓRIO DE ARMADILHAS FEROMÔNIO - LEPIDÓPTEROS",
   "Pulverização Manual": "RELATÓRIO DE REALIZAÇÃO DE SERVIÇO DE PULVERIZAÇÃO",
   "Pulverização Mecanizada": "RELATÓRIO DE REALIZAÇÃO DE SERVIÇO DE PULVERIZAÇÃO MECANIZADA",
   "Fumigação": "RELATÓRIO DE FUMIGAÇÃO",
@@ -36,6 +37,9 @@ const formatDateOnly = value => {
   const date = new Date(value);
   return Number.isNaN(date.getTime()) ? textValue(value) : new Intl.DateTimeFormat("pt-BR", { dateStyle: "short" }).format(date);
 };
+
+const reportLots = item =>
+  (Array.isArray(item.lotes) ? item.lotes : []).filter(lote => lote && lote !== item.numeroOs);
 
 const isS3Url = url => {
   try { return /\.s3(?:[.-][a-z0-9-]+)?\.amazonaws\.com$/i.test(new URL(url, window.location.origin).hostname); }
@@ -104,11 +108,13 @@ const header = (doc, title, identifier, logo) => {
 const identification = (doc, item, startY) => {
   const isLoadingReport = item.tipoControle === "Carregamento";
   const hasLotQuantities = Array.isArray(item.lotesQuantidades) && item.lotesQuantidades.some(row => row?.lote || row?.quantidade);
+  const lotesRelatorio = reportLots(item);
   const fields = [
     ["EMPRESA", item.empresa],
     ...(!isLoadingReport ? [["CLIENTE / UNIDADE", item.unidadeCliente || item.formularioTitulo]] : []),
     ...(item.cliente ? [["CLIENTE", item.cliente]] : []),
     ...(item.produto ? [["PRODUTO", item.produto]] : []),
+    ...(!hasLotQuantities && lotesRelatorio.length ? [["LOTES", lotesRelatorio.join(" | ")]] : []),
     ...(item.quantidade && !hasLotQuantities ? [["QUANTIDADE", item.quantidade]] : []),
     ...(item.placaVeiculo ? [["PLACA DO VEÍCULO", item.placaVeiculo]] : []),
     ...(!isLoadingReport ? [["ÁREA / SETOR", item.areaSetor], ["REALIZADO POR", item.realizadoPor]] : []),
@@ -141,6 +147,35 @@ const lotQuantitiesEntries = item => {
   return rows.length
     ? [{ key: "Quantidade por lote", value: rows.map(row => `${row.lote || "-"}: ${row.quantidade || "-"}`).join(" | ") }]
     : [];
+};
+
+const duplicatedDataKeys = (item, hasLotQuantities) => {
+  const keys = new Set(["Data", "Controle", "Tipo de controle", "Tipo de Controle", "Lotes", "Lotes / quantidades"]);
+  if (item.empresa) keys.add("Empresa");
+  if (item.cliente) keys.add("Cliente");
+  if (item.produto) keys.add("Produto");
+  if (item.quantidade || hasLotQuantities) keys.add("Quantidade");
+  if (item.placaVeiculo) keys.add("Placa do veículo");
+  if (item.unidadeCliente) {
+    keys.add("Unidade do cliente");
+    keys.add("Unidade / Cliente");
+  }
+  if (item.areaSetor) {
+    keys.add("Área/Setor");
+    keys.add("Área/Setor ");
+    keys.add("Área / setor");
+  }
+  if (item.realizadoPor) keys.add("Realizado por:");
+  return keys;
+};
+
+const serviceDataEntries = item => {
+  const hasLotQuantities = Array.isArray(item.lotesQuantidades) && item.lotesQuantidades.some(row => row?.lote || row?.quantidade);
+  const hiddenKeys = duplicatedDataKeys(item, hasLotQuantities);
+  return Object.entries(item.dados || {})
+    .filter(([key]) => !hiddenKeys.has(key))
+    .map(([key, value]) => ({ key, value: textValue(value) }))
+    .filter(entry => entry.value);
 };
 
 const measureData = (doc, entries, fontSize) => {
@@ -248,10 +283,7 @@ export async function baixarPdfRelatorio(item) {
   const photoReserve = item.fotos?.length ? 52 : 0;
   const entries = [
     ...lotQuantitiesEntries(item),
-    ...Object.entries(item.dados || {})
-      .filter(([key]) => key !== "Lotes / quantidades")
-      .map(([key, value]) => ({ key, value: textValue(value) }))
-      .filter(entry => entry.value),
+    ...serviceDataEntries(item),
   ];
   y = drawData(doc, entries, y, Math.max(25, signatureTop - y - photoReserve - 5));
   drawPhotos(doc, item.fotos || [], photoImages, title, logo, y + 3, signatureTop - 3);

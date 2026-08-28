@@ -168,6 +168,82 @@ body {
 .search > .apple-icon {
   color: var(--apple-secondary-label);
 }
+.folder-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+}
+.folder-card {
+  display: grid;
+  grid-template-rows: 132px auto;
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--surface);
+  color: inherit;
+  text-align: left;
+  box-shadow: 0 1px 2px rgba(25, 49, 33, 0.03);
+  transition:
+    border-color 0.22s ease,
+    box-shadow 0.22s ease,
+    transform 0.22s ease;
+}
+.folder-card:hover {
+  border-color: rgba(22, 113, 59, 0.23);
+  box-shadow: var(--shadow);
+  transform: translateY(-3px);
+}
+.folder-card:focus-visible {
+  border-color: var(--apple-tint);
+  box-shadow:
+    0 0 0 4px rgba(20, 116, 60, 0.14),
+    var(--apple-shadow-lg);
+  outline: 0;
+}
+.folder-card > img,
+.folder-placeholder {
+  width: 100%;
+  height: 132px;
+}
+.folder-card > img {
+  object-fit: cover;
+  background: #dde4df;
+}
+.folder-placeholder {
+  display: grid;
+  place-items: center;
+  background: linear-gradient(145deg, #e4ede6, #d7e4db);
+  color: var(--green-dark);
+}
+.folder-copy {
+  display: grid;
+  gap: 8px;
+  padding: 16px;
+}
+.folder-copy b {
+  color: var(--apple-label);
+  font-family: Outfit, sans-serif;
+  font-size: 18px;
+  line-height: 1.2;
+}
+.folder-copy small {
+  color: var(--apple-secondary-label);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.45;
+}
+.folder-back {
+  margin-top: 7px;
+  padding: 0;
+  font-size: 12px;
+}
+.latest-title {
+  margin-top: 34px;
+}
+.latest-report-grid {
+  margin-bottom: 8px;
+}
 
 .dashboard-filters {
   display: grid;
@@ -329,6 +405,20 @@ body {
   }
   .report-card:hover {
     transform: none;
+  }
+  .folder-grid {
+    grid-template-columns: 1fr;
+  }
+  .folder-card {
+    grid-template-columns: 112px minmax(0, 1fr);
+    grid-template-rows: 112px;
+  }
+  .folder-card:hover {
+    transform: none;
+  }
+  .folder-card > img,
+  .folder-placeholder {
+    height: 112px;
   }
   .form-section {
     border-radius: 16px;

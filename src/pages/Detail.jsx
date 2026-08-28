@@ -6,6 +6,50 @@ import { AppleIcon } from "../components/AppleIcon";
 import { Layout } from "../components/Layout";
 import { formatDate, formatDateOnly, formatValue } from "../utils/formatters";
 
+const normalizeControlName = (value) =>
+  value === "Arm. Feromônio - Epdópterus"
+    ? "Arm. Feromônio - Lepidópteros"
+    : value;
+
+const reportLots = (item) =>
+  (Array.isArray(item.lotes) ? item.lotes : []).filter(
+    (lote) => lote && lote !== item.numeroOs,
+  );
+
+const duplicatedDataKeys = (item, lotesQuantidades) => {
+  const keys = new Set([
+    "Data",
+    "Controle",
+    "Tipo de controle",
+    "Tipo de Controle",
+    "Lotes",
+    "Lotes / quantidades",
+  ]);
+  if (item.empresa) keys.add("Empresa");
+  if (item.cliente) keys.add("Cliente");
+  if (item.produto) keys.add("Produto");
+  if (item.quantidade || lotesQuantidades.length) keys.add("Quantidade");
+  if (item.placaVeiculo) keys.add("Placa do veículo");
+  if (item.unidadeCliente) {
+    keys.add("Unidade do cliente");
+    keys.add("Unidade / Cliente");
+  }
+  if (item.areaSetor) {
+    keys.add("Área/Setor");
+    keys.add("Área/Setor ");
+    keys.add("Área / setor");
+  }
+  if (item.realizadoPor) keys.add("Realizado por:");
+  return keys;
+};
+
+const serviceDataEntries = (item, lotesQuantidades) => {
+  const hiddenKeys = duplicatedDataKeys(item, lotesQuantidades);
+  return Object.entries(item.dados || {}).filter(
+    ([key, value]) => !hiddenKeys.has(key) && formatValue(value),
+  );
+};
+
 export function Detail({ shared = false }) {
   const { auth } = useAuth();
   const params = useParams();
@@ -117,13 +161,12 @@ export function Detail({ shared = false }) {
       </Layout>
     );
 
-  const dados = Object.entries(item.dados || {}).filter(
-    ([key, value]) => key !== "Lotes / quantidades" && formatValue(value),
-  );
   const isLoadingReport = item.tipoControle === "Carregamento";
   const lotesQuantidades = Array.isArray(item.lotesQuantidades)
     ? item.lotesQuantidades.filter((linha) => linha?.lote || linha?.quantidade)
     : [];
+  const lotesRelatorio = reportLots(item);
+  const dados = serviceDataEntries(item, lotesQuantidades);
   const selectedPhoto =
     selectedPhotoIndex == null ? null : item.fotos?.[selectedPhotoIndex];
   const photoKey = (photo, index) => photo.chave || photo.url || String(index);
@@ -159,10 +202,10 @@ export function Detail({ shared = false }) {
             <span className="lot">{item.numeroOs || item.lotes?.[0]}</span>
             {item.empresa && <span className="lot alt">{item.empresa}</span>}
             {item.tipoControle && (
-              <span className="lot alt">{item.tipoControle}</span>
+              <span className="lot alt">{normalizeControlName(item.tipoControle)}</span>
             )}
           </div>
-          <h1>{item.tipoControle || "Relatório de controle"}</h1>
+          <h1>{normalizeControlName(item.tipoControle) || "Relatório de controle"}</h1>
           <p>{formatDate(item.dataTratamento)}</p>
         </div>
         <div className="detail-actions">
@@ -212,6 +255,12 @@ export function Detail({ shared = false }) {
               <div>
                 <dt>Produto</dt>
                 <dd>{item.produto}</dd>
+              </div>
+            )}
+            {!lotesQuantidades.length && lotesRelatorio.length > 0 && (
+              <div>
+                <dt>Lotes</dt>
+                <dd>{lotesRelatorio.join(" | ")}</dd>
               </div>
             )}
             {item.quantidade && !lotesQuantidades.length && (

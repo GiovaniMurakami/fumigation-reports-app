@@ -10,6 +10,7 @@ export const repeatableTrapSections = new Set([
   "Armadilhas luminosas ",
   "Armadilhas feromônio - Coleópterus",
   "Armadilhas feromônio - Lepdópteros",
+  "Armadilhas feromônio - Lepidópteros",
 ]);
 
 export const masterFieldIds = new Set(["entry.1721614377", "entry.1994831449", "entry.558955180"]);

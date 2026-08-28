@@ -6,6 +6,37 @@ import { AppleIcon } from "../components/AppleIcon";
 import { Layout } from "../components/Layout";
 import { formatDate } from "../utils/formatters";
 
+const normalizeControlName = (value) =>
+  value === "Arm. Feromônio - Epdópterus"
+    ? "Arm. Feromônio - Lepidópteros"
+    : value;
+
+const dateTime = (value) => {
+  const time = new Date(value).getTime();
+  return Number.isNaN(time) ? 0 : time;
+};
+
+const sortRecent = (reports) =>
+  [...reports].sort((a, b) => dateTime(b.dataTratamento) - dateTime(a.dataTratamento));
+
+const buildControlFolders = (reports) =>
+  sortRecent(reports).reduce((folders, report) => {
+    const tipoControle = normalizeControlName(report.tipoControle || "Relatório de controle");
+    const current = folders.get(tipoControle) || {
+      tipoControle,
+      total: 0,
+      latestDate: report.dataTratamento,
+      cover: report.fotos?.[0]?.url || "",
+    };
+    current.total += 1;
+    if (!current.cover && report.fotos?.[0]?.url) current.cover = report.fotos[0].url;
+    if (dateTime(report.dataTratamento) > dateTime(current.latestDate)) {
+      current.latestDate = report.dataTratamento;
+    }
+    folders.set(tipoControle, current);
+    return folders;
+  }, new Map());
+
 const resumoRelatorio = (item) => {
   const lotesQuantidades = Array.isArray(item.lotesQuantidades)
     ? item.lotesQuantidades.filter((linha) => linha?.lote || linha?.quantidade)
@@ -26,6 +57,45 @@ const resumoRelatorio = (item) => {
   );
 };
 
+function ReportCard({ item, onOpen }) {
+  return (
+    <article
+      className="report-card"
+      onClick={onOpen}
+      tabIndex={0}
+      role="link"
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") onOpen();
+      }}
+    >
+      {item.fotos?.[0]?.url ? (
+        <img src={item.fotos[0].url} alt="Evidência do serviço" />
+      ) : (
+        <div className="report-placeholder">
+          <AppleIcon name="document" size={28} />
+          <span>BioSafe Pest</span>
+        </div>
+      )}
+      <div>
+        <div className="lot-list">
+          <span className="lot">
+            {item.numeroOs || item.lotes?.[0]}
+          </span>
+          {item.empresa && (
+            <span className="lot alt">{item.empresa}</span>
+          )}
+        </div>
+        <h3>{normalizeControlName(item.tipoControle) || "Relatório de controle"}</h3>
+        <p>{resumoRelatorio(item)}</p>
+        <footer>
+          <span>{formatDate(item.dataTratamento)}</span>
+          <b>Ver relatório →</b>
+        </footer>
+      </div>
+    </article>
+  );
+}
+
 export function Dashboard() {
   const { auth } = useAuth();
   const [items, setItems] = useState([]);
@@ -33,6 +103,8 @@ export function Dashboard() {
   const [appliedQuery, setAppliedQuery] = useState("");
   const [dataOs, setDataOs] = useState("");
   const [appliedDataOs, setAppliedDataOs] = useState("");
+  const [selectedControl, setSelectedControl] = useState("");
+  const [latestItems, setLatestItems] = useState([]);
   const [pagination, setPagination] = useState({
     pagina: 1,
     limite: 20,
@@ -43,12 +115,18 @@ export function Dashboard() {
   });
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
-  const load = async (lote = appliedQuery, pagina = 1, dataOsFiltro = appliedDataOs) => {
+  const load = async (
+    lote = appliedQuery,
+    pagina = 1,
+    dataOsFiltro = appliedDataOs,
+    tipoControle = selectedControl,
+  ) => {
     setLoading(true);
     try {
       const response = await api.listar({
         lote,
         dataOs: dataOsFiltro,
+        tipoControle,
         pagina,
         limite: pagination.limite,
       });
@@ -65,17 +143,41 @@ export function Dashboard() {
       setLoading(false);
     }
   };
+  const loadLatest = async (lote = appliedQuery, dataOsFiltro = appliedDataOs) => {
+    const response = await api.listar({
+      lote,
+      dataOs: dataOsFiltro,
+      ordenar: "criados",
+      pagina: 1,
+      limite: 3,
+    });
+    setLatestItems(response.itens || []);
+  };
   useEffect(() => {
     load("", 1, "");
+    loadLatest("", "");
   }, []);
-  const hasActiveFilters = Boolean(appliedQuery || appliedDataOs);
+  const hasActiveFilters = Boolean(appliedQuery || appliedDataOs || selectedControl);
   const clearFilters = () => {
     setQuery("");
     setDataOs("");
     setAppliedQuery("");
     setAppliedDataOs("");
-    load("", 1, "");
+    setSelectedControl("");
+    load("", 1, "", "");
+    loadLatest("", "");
   };
+  const openControlFolder = (tipoControle) => {
+    setSelectedControl(tipoControle);
+    load(appliedQuery, 1, appliedDataOs, tipoControle);
+  };
+  const closeControlFolder = () => {
+    setSelectedControl("");
+    load(appliedQuery, 1, appliedDataOs, "");
+    loadLatest(appliedQuery, appliedDataOs);
+  };
+  const controlFolders = [...buildControlFolders(items).values()];
+  const sortedItems = sortRecent(items);
   const userEmpresas = [
     ...new Set([
       ...(Array.isArray(auth?.usuario?.empresas) ? auth.usuario.empresas : []),
@@ -118,7 +220,8 @@ export function Dashboard() {
           const nextDataOs = dataOs;
           setAppliedQuery(nextQuery);
           setAppliedDataOs(nextDataOs);
-          load(nextQuery, 1, nextDataOs);
+          load(nextQuery, 1, nextDataOs, selectedControl);
+          if (!selectedControl) loadLatest(nextQuery, nextDataOs);
         }}
       >
         <label className="filter-field filter-field-search">
@@ -158,7 +261,18 @@ export function Dashboard() {
         </div>
       </form>
       <div className="section-title">
-        <h2>Relatórios recentes</h2>
+        <div>
+          <h2>{selectedControl || "Pastas de relatórios"}</h2>
+          {selectedControl && (
+            <button
+              className="link folder-back"
+              type="button"
+              onClick={closeControlFolder}
+            >
+              ← Voltar às pastas
+            </button>
+          )}
+        </div>
         <span>
           {pagination.total} registro{pagination.total !== 1 && "s"}
         </span>
@@ -172,52 +286,67 @@ export function Dashboard() {
         </div>
       ) : (
         <>
-          <div className="report-grid">
-            {items.map((item) => (
-              <article
-                className="report-card"
-                key={item.id}
-                onClick={() => navigate(`/relatorios/${item.id}`)}
-                tabIndex={0}
-                role="link"
-                onKeyDown={(event) => {
-                  if (event.key === "Enter" || event.key === " ")
-                    navigate(`/relatorios/${item.id}`);
-                }}
-              >
-                {item.fotos[0]?.url ? (
-                  <img src={item.fotos[0].url} alt="Evidência do serviço" />
-                ) : (
-                  <div className="report-placeholder">
-                    <AppleIcon name="document" size={28} />
-                    <span>BioSafe Pest</span>
-                  </div>
-                )}
-                <div>
-                  <div className="lot-list">
-                    <span className="lot">
-                      {item.numeroOs || item.lotes?.[0]}
+          {!selectedControl && (
+            <div className="folder-grid">
+              {controlFolders.map((folder) => (
+                <button
+                  className="folder-card"
+                  key={folder.tipoControle}
+                  type="button"
+                  onClick={() => openControlFolder(folder.tipoControle)}
+                >
+                  {folder.cover ? (
+                    <img src={folder.cover} alt="" />
+                  ) : (
+                    <span className="folder-placeholder">
+                      <AppleIcon name="document" size={28} />
                     </span>
-                    {item.empresa && (
-                      <span className="lot alt">{item.empresa}</span>
-                    )}
-                  </div>
-                  <h3>{item.tipoControle || "Relatório de controle"}</h3>
-                  <p>{resumoRelatorio(item)}</p>
-                  <footer>
-                    <span>{formatDate(item.dataTratamento)}</span>
-                    <b>Ver relatório →</b>
-                  </footer>
-                </div>
-              </article>
-            ))}
-          </div>
-          {pagination.totalPaginas > 1 && (
+                  )}
+                  <span className="folder-copy">
+                    <b>{folder.tipoControle}</b>
+                    <small>
+                      {folder.total} relatório{folder.total !== 1 && "s"} · Mais recente em{" "}
+                      {formatDate(folder.latestDate)}
+                    </small>
+                  </span>
+                </button>
+              ))}
+            </div>
+          )}
+          {selectedControl && (
+            <div className="report-grid">
+              {sortedItems.map((item) => (
+                <ReportCard
+                  key={item.id}
+                  item={item}
+                  onOpen={() => navigate(`/relatorios/${item.id}`)}
+                />
+              ))}
+            </div>
+          )}
+          {!selectedControl && latestItems.length > 0 && (
+            <>
+              <div className="section-title latest-title">
+                <h2>Últimos relatórios criados</h2>
+                <span>3 mais recentes</span>
+              </div>
+              <div className="report-grid latest-report-grid">
+                {latestItems.map((item) => (
+                  <ReportCard
+                    key={item.id}
+                    item={item}
+                    onOpen={() => navigate(`/relatorios/${item.id}`)}
+                  />
+                ))}
+              </div>
+            </>
+          )}
+          {selectedControl && pagination.totalPaginas > 1 && (
             <nav className="pagination" aria-label="Paginação de relatórios">
               <button
                 className="secondary pagination-button"
                 disabled={loading || !pagination.temPaginaAnterior}
-                onClick={() => load(appliedQuery, pagination.pagina - 1, appliedDataOs)}
+                onClick={() => load(appliedQuery, pagination.pagina - 1, appliedDataOs, selectedControl)}
                 type="button"
               >
                 <AppleIcon name="chevronLeft" size={17} />
@@ -229,7 +358,7 @@ export function Dashboard() {
               <button
                 className="secondary pagination-button"
                 disabled={loading || !pagination.temProximaPagina}
-                onClick={() => load(appliedQuery, pagination.pagina + 1, appliedDataOs)}
+                onClick={() => load(appliedQuery, pagination.pagina + 1, appliedDataOs, selectedControl)}
                 type="button"
               >
                 Próxima

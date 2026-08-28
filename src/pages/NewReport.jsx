@@ -387,6 +387,7 @@ export function NewReport() {
                 Produto: valueOf(form.dadosAtividade, "carregamento_produto"),
                 "Lotes / quantidades": lotesQuantidades,
                 "Placa do veículo": valueOf(form.dadosAtividade, "carregamento_placa_veiculo"),
+                Observação: valueOf(form.dadosAtividade, "carregamento_observacao"),
               }
             : {}),
         },
@@ -629,6 +630,13 @@ export function NewReport() {
                   value={valueOf(form.dadosAtividade, "carregamento_placa_veiculo")}
                   onChange={(value) => setActivity("carregamento_placa_veiculo", value.toUpperCase())}
                   placeholder="Ex.: ABC1D23"
+                />
+                <Field
+                  label="Observação"
+                  as="textarea"
+                  rows="3"
+                  value={valueOf(form.dadosAtividade, "carregamento_observacao")}
+                  onChange={(value) => setActivity("carregamento_observacao", value)}
                 />
               </div>
             )}
