@@ -112,6 +112,8 @@ export const api = {
   },
   buscar: (id) => request(`/relatorios/${id}`),
   criar: (body) => request("/relatorios", { method: "POST", body: JSON.stringify(body) }),
+  atualizar: (id, body) => request(`/relatorios/${encodeURIComponent(id)}`, { method: "PATCH", body: JSON.stringify(body) }),
+  excluir: (id) => request(`/relatorios/${encodeURIComponent(id)}`, { method: "DELETE" }),
   compartilhar: (id) => request(`/relatorios/${id}/compartilhar`, { method: "POST" }),
   publico: (token) => request(`/publico/relatorios/${encodeURIComponent(token)}`, {}, false),
   async upload(file) {
