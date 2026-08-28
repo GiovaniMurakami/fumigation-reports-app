@@ -169,6 +169,86 @@ body {
   color: var(--apple-secondary-label);
 }
 
+.dashboard-filters {
+  display: grid;
+  grid-template-columns: minmax(260px, 1fr) minmax(190px, 230px) auto;
+  gap: 12px;
+  align-items: end;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: var(--surface);
+  box-shadow: 0 4px 18px rgba(25, 49, 33, 0.05);
+}
+
+.filter-field {
+  display: grid;
+  gap: 7px;
+  min-width: 0;
+  color: #35433a;
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.filter-field > span {
+  padding-left: 3px;
+}
+
+.filter-field > div,
+.filter-field > input {
+  width: 100%;
+  min-height: 46px;
+  border: 1px solid rgba(20, 50, 31, 0.16);
+  border-radius: 12px;
+  background: #fff;
+  color: #17211b;
+}
+
+.filter-field > div {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 13px;
+}
+
+.filter-field svg {
+  flex: 0 0 auto;
+  color: var(--green);
+}
+
+.filter-field input {
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: #17211b;
+}
+
+.filter-field > input {
+  padding: 0 13px;
+}
+
+.filter-field input::placeholder {
+  color: #8b9791;
+}
+
+.filter-field:focus-within > div,
+.filter-field:focus-within > input {
+  border-color: var(--green);
+  box-shadow: var(--focus);
+}
+
+.filter-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.filter-actions button {
+  min-height: 46px;
+  white-space: nowrap;
+}
+
 .tabs [role="tab"] {
   position: relative;
 }
@@ -371,6 +451,20 @@ body {
 }
 
 @media (max-width: 600px) {
+  .dashboard-filters {
+    grid-template-columns: 1fr;
+    padding: 12px;
+  }
+
+  .filter-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .filter-actions button {
+    width: 100%;
+  }
+
   .pagination {
     display: grid;
     grid-template-columns: 1fr 1fr;

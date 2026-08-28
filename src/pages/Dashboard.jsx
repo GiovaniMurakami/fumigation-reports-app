@@ -6,6 +6,26 @@ import { AppleIcon } from "../components/AppleIcon";
 import { Layout } from "../components/Layout";
 import { formatDate } from "../utils/formatters";
 
+const resumoRelatorio = (item) => {
+  const lotesQuantidades = Array.isArray(item.lotesQuantidades)
+    ? item.lotesQuantidades.filter((linha) => linha?.lote || linha?.quantidade)
+    : [];
+  if (lotesQuantidades.length) {
+    return lotesQuantidades
+      .map((linha) => `${linha.lote || "-"}: ${linha.quantidade || "-"}`)
+      .join(" | ");
+  }
+  return (
+    item.cliente ||
+    item.produto ||
+    item.quantidade ||
+    item.placaVeiculo ||
+    item.unidadeCliente ||
+    item.areaSetor ||
+    "Sem unidade informada"
+  );
+};
+
 export function Dashboard() {
   const { auth } = useAuth();
   const [items, setItems] = useState([]);
@@ -48,6 +68,14 @@ export function Dashboard() {
   useEffect(() => {
     load("", 1, "");
   }, []);
+  const hasActiveFilters = Boolean(appliedQuery || appliedDataOs);
+  const clearFilters = () => {
+    setQuery("");
+    setDataOs("");
+    setAppliedQuery("");
+    setAppliedDataOs("");
+    load("", 1, "");
+  };
   const userEmpresas = [
     ...new Set([
       ...(Array.isArray(auth?.usuario?.empresas) ? auth.usuario.empresas : []),
@@ -83,7 +111,7 @@ export function Dashboard() {
         )
       )}
       <form
-        className="search"
+        className="dashboard-filters"
         onSubmit={(e) => {
           e.preventDefault();
           const nextQuery = query.trim();
@@ -93,21 +121,41 @@ export function Dashboard() {
           load(nextQuery, 1, nextDataOs);
         }}
       >
-        <span>⌕</span>
-        <input
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Buscar por O.S., tipo, unidade, cliente, produto, quantidade, placa ou lote"
-          aria-label="Buscar relat?rios"
-        />
-        <input
-          type="date"
-          value={dataOs}
-          onChange={(e) => setDataOs(e.target.value)}
-          aria-label="Filtrar por data da O.S."
-          title="Data da O.S."
-        />
-        <button>Buscar</button>
+        <label className="filter-field filter-field-search">
+          <span>Busca</span>
+          <div>
+            <AppleIcon name="search" size={18} />
+            <input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="O.S., cliente, lote, produto ou placa"
+              aria-label="Buscar relatórios"
+            />
+          </div>
+        </label>
+        <label className="filter-field filter-field-date">
+          <span>Data da O.S.</span>
+          <input
+            type="date"
+            value={dataOs}
+            onChange={(e) => setDataOs(e.target.value)}
+            aria-label="Filtrar por data da O.S."
+          />
+        </label>
+        <div className="filter-actions">
+          {hasActiveFilters && (
+            <button
+              className="secondary"
+              type="button"
+              onClick={clearFilters}
+            >
+              Limpar
+            </button>
+          )}
+          <button className="primary" type="submit">
+            Buscar
+          </button>
+        </div>
       </form>
       <div className="section-title">
         <h2>Relatórios recentes</h2>
@@ -155,15 +203,7 @@ export function Dashboard() {
                     )}
                   </div>
                   <h3>{item.tipoControle || "Relatório de controle"}</h3>
-                  <p>
-                    {item.cliente ||
-                      item.produto ||
-                      item.quantidade ||
-                      item.placaVeiculo ||
-                      item.unidadeCliente ||
-                      item.areaSetor ||
-                      "Sem unidade informada"}
-                  </p>
+                  <p>{resumoRelatorio(item)}</p>
                   <footer>
                     <span>{formatDate(item.dataTratamento)}</span>
                     <b>Ver relatório →</b>

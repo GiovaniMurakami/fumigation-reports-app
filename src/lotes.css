@@ -1,6 +1,7 @@
 .lot-list { display: flex; flex-wrap: wrap; gap: 6px; }
 .lotes-fields { display: grid; gap: 12px; margin-bottom: 22px; }
 .lote-row { display: grid; grid-template-columns: 1fr 40px; gap: 8px; align-items: end; }
+.loading-lote-row { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 44px; }
 .remove-lote { height: 42px; border: 1px solid #e1c9c4; border-radius: 8px; background: #fff4f1; color: #9b3c2d; font-size: 22px; }
 .add-lote { justify-self: start; border: 0; background: none; color: var(--green); font-weight: 700; padding: 4px 0; }
 .identification { margin-top: 8px; }
@@ -29,3 +30,7 @@ header{min-height:68px;height:auto;background:rgba(251,252,251,.78);border-color
 
 .signature-picker{min-width:0;margin:0;border:0;padding:0}.signature-picker legend{margin:0;padding:0;color:#35433a;font-size:13px;font-weight:600}.signature-picker>p{margin:4px 0 10px;color:var(--muted);font-size:12px;line-height:1.4}.signature-options{display:grid;gap:8px}.signature-option{position:relative;min-height:56px;display:grid;grid-template-columns:24px minmax(0,1fr);align-items:center;gap:11px;border:1px solid var(--line);border-radius:12px;background:rgba(255,255,255,.72);padding:10px 12px;cursor:pointer;transition:border-color .18s ease,background-color .18s ease,box-shadow .18s ease}.signature-option:hover{border-color:rgba(22,113,59,.34);background:#fff}.signature-option.selected{border-color:rgba(22,113,59,.5);background:#edf7f0}.signature-option input{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap}.signature-option:has(input:focus-visible){border-color:var(--green);box-shadow:var(--focus)}.signature-check{width:22px;height:22px;display:grid;place-items:center;border:1.5px solid rgba(20,50,31,.28);border-radius:7px;background:#fff;color:transparent;font-size:15px;font-weight:800;line-height:1}.signature-option.selected .signature-check{border-color:var(--green);background:var(--green);color:#fff}.signature-option-copy{display:grid;gap:2px;min-width:0}.signature-option-copy b{overflow:hidden;color:#1d2a22;font-size:14px;font-weight:600;line-height:1.25;text-overflow:ellipsis;white-space:nowrap}.signature-option-copy small{overflow:hidden;color:var(--muted);font-size:12px;font-weight:400;text-overflow:ellipsis;white-space:nowrap}
 @media(max-width:600px){.signature-option{min-height:58px}}
+.lot-quantities { display: grid; gap: 8px; }
+.lot-quantities span { display: flex; justify-content: space-between; gap: 12px; border: 1px solid var(--line); border-radius: 10px; padding: 9px 11px; background: #f8faf8; }
+.lot-quantities b { color: var(--green-dark); }
+@media(max-width:600px){.loading-lote-row{grid-template-columns:1fr}.loading-lote-row .remove-lote{width:100%}.lot-quantities span{display:grid;gap:3px}}

@@ -91,6 +91,54 @@ function FumigationLots({ values, onChange }) {
   );
 }
 
+function LoadingLots({ values, onChange }) {
+  const update = (index, key, value) =>
+    onChange(
+      values.map((item, itemIndex) =>
+        itemIndex === index ? { ...item, [key]: value } : item,
+      ),
+    );
+  const remove = (index) =>
+    onChange(values.filter((_, itemIndex) => itemIndex !== index));
+  return (
+    <div className="lotes-fields loading-lotes-fields">
+      {values.map((item, index) => (
+        <div className="lote-row loading-lote-row" key={index}>
+          <Field
+            label={`Lote ${index + 1}`}
+            value={item.lote}
+            onChange={(value) => update(index, "lote", value)}
+            placeholder="Ex.: LT-2026-0842"
+          />
+          <Field
+            label="Quantidade"
+            value={item.quantidade}
+            onChange={(value) => update(index, "quantidade", value)}
+            placeholder="Ex.: 24.000 kg"
+          />
+          {values.length > 1 && (
+            <button
+              type="button"
+              className="remove-lote"
+              onClick={() => remove(index)}
+              aria-label={`Remover lote ${index + 1}`}
+            >
+              ×
+            </button>
+          )}
+        </div>
+      ))}
+      <button
+        type="button"
+        className="add-lote"
+        onClick={() => onChange([...values, { lote: "", quantidade: "" }])}
+      >
+        ＋ Adicionar outro lote
+      </button>
+    </div>
+  );
+}
+
 export function NewReport() {
   const { auth } = useAuth();
   const [form, setForm] = useState(initialReport);
@@ -102,6 +150,7 @@ export function NewReport() {
   const [uploadProgress, setUploadProgress] = useState(null);
   const [repeatableValues, setRepeatableValues] = useState({});
   const [fumigationLotes, setFumigationLotes] = useState([""]);
+  const [loadingLots, setLoadingLots] = useState([{ lote: "", quantidade: "" }]);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const navigate = useNavigate();
@@ -249,10 +298,6 @@ export function NewReport() {
                 ),
             }
           : {};
-      if (files.length) setUploadProgress({ done: 0, total: files.length });
-      const fotos = await uploadFiles(files, (done) =>
-        setUploadProgress({ done, total: files.length }),
-      );
       const dataTratamento = dateToIso(dataValue) || new Date().toISOString();
       const dataInicio =
         controle === "Fumigação"
@@ -263,8 +308,36 @@ export function NewReport() {
           ? dateToIso(valueOf(form.dadosAtividade, fumigationEndDateId))
           : undefined;
       const lotesRelatorio = hasLotes
-        ? fumigationLotes.map((lote) => lote.trim()).filter(Boolean)
+        ? (isLoadingReport
+            ? loadingLots.map((item) => item.lote.trim()).filter(Boolean)
+            : fumigationLotes.map((lote) => lote.trim()).filter(Boolean))
         : [];
+      const lotesQuantidades =
+        isLoadingReport
+          ? loadingLots
+              .map((item) => ({
+                lote: item.lote.trim(),
+                quantidade: item.quantidade.trim(),
+              }))
+              .filter((item) => item.lote || item.quantidade)
+          : [];
+      if (isLoadingReport && !lotesQuantidades.length) {
+        setError("Informe ao menos um lote com quantidade no carregamento.");
+        setBusy(false);
+        return;
+      }
+      if (
+        isLoadingReport &&
+        lotesQuantidades.some((item) => !item.lote || !item.quantidade)
+      ) {
+        setError("Informe lote e quantidade em todas as linhas do carregamento.");
+        setBusy(false);
+        return;
+      }
+      if (files.length) setUploadProgress({ done: 0, total: files.length });
+      const fotos = await uploadFiles(files, (done) =>
+        setUploadProgress({ done, total: files.length }),
+      );
       const item = await api.criar({
         empresa: empresaRelatorio,
         assinaturaIds: form.assinaturaIds,
@@ -276,10 +349,7 @@ export function NewReport() {
           controle === "Carregamento"
             ? valueOf(form.dadosAtividade, "carregamento_produto")
             : undefined,
-        quantidade:
-          controle === "Carregamento"
-            ? valueOf(form.dadosAtividade, "carregamento_quantidade")
-            : undefined,
+        quantidade: undefined,
         placaVeiculo:
           controle === "Carregamento"
             ? valueOf(form.dadosAtividade, "carregamento_placa_veiculo")
@@ -288,6 +358,7 @@ export function NewReport() {
         dataInicio,
         dataFim,
         lotes: hasLotes ? lotesRelatorio : undefined,
+        lotesQuantidades: isLoadingReport ? lotesQuantidades : undefined,
         formularioTitulo: formCatalog.formTitle,
         unidadeCliente: isLoadingReport
           ? undefined
@@ -314,7 +385,7 @@ export function NewReport() {
             ? {
                 Cliente: valueOf(form.dadosAtividade, "carregamento_cliente"),
                 Produto: valueOf(form.dadosAtividade, "carregamento_produto"),
-                Quantidade: valueOf(form.dadosAtividade, "carregamento_quantidade"),
+                "Lotes / quantidades": lotesQuantidades,
                 "Placa do veículo": valueOf(form.dadosAtividade, "carregamento_placa_veiculo"),
               }
             : {}),
@@ -496,10 +567,14 @@ export function NewReport() {
         {controle && (
           <FormSection number="03" title={sectionName || controle}>
             {hasLotes && (
-              <FumigationLots
-                values={fumigationLotes}
-                onChange={setFumigationLotes}
-              />
+              isLoadingReport ? (
+                <LoadingLots values={loadingLots} onChange={setLoadingLots} />
+              ) : (
+                <FumigationLots
+                  values={fumigationLotes}
+                  onChange={setFumigationLotes}
+                />
+              )
             )}
             {sectionName === "Fumigação" && (
               <>
@@ -548,12 +623,6 @@ export function NewReport() {
                   label="Produto"
                   value={valueOf(form.dadosAtividade, "carregamento_produto")}
                   onChange={(value) => setActivity("carregamento_produto", value)}
-                />
-                <Field
-                  label="Quantidade"
-                  value={valueOf(form.dadosAtividade, "carregamento_quantidade")}
-                  onChange={(value) => setActivity("carregamento_quantidade", value)}
-                  placeholder="Ex.: 24.000 kg"
                 />
                 <Field
                   label="Placa do veículo"

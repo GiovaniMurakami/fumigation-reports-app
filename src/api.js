@@ -7,30 +7,86 @@ if (import.meta.env.PROD && !configuredApiUrl) {
 const developmentApiUrl = import.meta.env.DEV ? "http://localhost:3000" : "";
 export const apiBaseUrl = (configuredApiUrl || developmentApiUrl).replace(/\/$/, "");
 const storageKey = "fumigadoc.auth";
+const authChangedEvent = "fumigadoc.auth.changed";
 
 export const authStore = {
   get: () => { try { return JSON.parse(localStorage.getItem(storageKey) || "null"); } catch { return null; } },
-  set: (value) => localStorage.setItem(storageKey, JSON.stringify(value)),
-  clear: () => localStorage.removeItem(storageKey),
+  set: (value) => {
+    localStorage.setItem(storageKey, JSON.stringify(value));
+    window.dispatchEvent(new CustomEvent(authChangedEvent, { detail: value }));
+  },
+  clear: () => {
+    localStorage.removeItem(storageKey);
+    window.dispatchEvent(new CustomEvent(authChangedEvent, { detail: null }));
+  },
+  subscribe: (listener) => {
+    const handler = (event) => listener(event.detail ?? authStore.get());
+    window.addEventListener(authChangedEvent, handler);
+    window.addEventListener("storage", handler);
+    return () => {
+      window.removeEventListener(authChangedEvent, handler);
+      window.removeEventListener("storage", handler);
+    };
+  },
 };
 
-async function request(path, options = {}, authenticated = true) {
+let refreshPromise = null;
+
+async function refreshAuth() {
+  const auth = authStore.get();
+  if (!auth?.refreshToken) throw new Error("Sessão inválida ou expirada.");
+  if (!refreshPromise) {
+    refreshPromise = fetch(`${apiBaseUrl}/auth/refresh`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ refreshToken: auth.refreshToken }),
+    })
+      .then(async (response) => {
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(data.mensagem || "Sessão inválida ou expirada.");
+        authStore.set(data);
+        return data;
+      })
+      .catch((error) => {
+        authStore.clear();
+        throw error;
+      })
+      .finally(() => {
+        refreshPromise = null;
+      });
+  }
+  return refreshPromise;
+}
+
+async function send(path, options = {}, authenticated = true) {
   const auth = authStore.get();
   const headers = { ...(options.body && !(options.body instanceof FormData) ? { "Content-Type": "application/json" } : {}), ...options.headers };
   if (authenticated && auth?.token) headers.Authorization = `Bearer ${auth.token}`;
   const response = await fetch(`${apiBaseUrl}${path}`, { ...options, headers });
-  if (response.status === 204) return null;
+  if (response.status === 204) return { response, data: null };
   const data = await response.json().catch(() => ({}));
-  if (!response.ok) {
-    if (response.status === 401 && authenticated) authStore.clear();
-    const errors = data.erros ? Object.values(data.erros).flat().join(" ") : "";
-    throw new Error(errors || data.mensagem || "Não foi possível concluir a operação.");
+  return { response, data };
+}
+
+async function request(path, options = {}, authenticated = true, retryRefresh = true) {
+  const { response, data } = await send(path, options, authenticated);
+  if (response.ok) return data;
+  if (response.status === 401 && authenticated && retryRefresh) {
+    try {
+      await refreshAuth();
+      return request(path, options, authenticated, false);
+    } catch {
+      authStore.clear();
+    }
   }
-  return data;
+  if (response.status === 401 && authenticated) authStore.clear();
+  const errors = data.erros ? Object.values(data.erros).flat().join(" ") : "";
+  throw new Error(errors || data.mensagem || "Não foi possível concluir a operação.");
 }
 
 export const api = {
   login: (body) => request("/auth/login", { method: "POST", body: JSON.stringify(body) }, false),
+  logout: (refreshToken) => request("/auth/logout", { method: "POST", body: JSON.stringify({ refreshToken }) }, false),
   cadastro: (body) => request("/auth/cadastro", { method: "POST", body: JSON.stringify(body) }, false),
   listarUsuarios: () => request("/usuarios"),
   validarUsuario: (id, body) => request(`/usuarios/${encodeURIComponent(id)}/validar`, { method: "PATCH", body: JSON.stringify(body) }),

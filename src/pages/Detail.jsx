@@ -117,10 +117,13 @@ export function Detail({ shared = false }) {
       </Layout>
     );
 
-  const dados = Object.entries(item.dados || {}).filter(([, value]) =>
-    formatValue(value),
+  const dados = Object.entries(item.dados || {}).filter(
+    ([key, value]) => key !== "Lotes / quantidades" && formatValue(value),
   );
   const isLoadingReport = item.tipoControle === "Carregamento";
+  const lotesQuantidades = Array.isArray(item.lotesQuantidades)
+    ? item.lotesQuantidades.filter((linha) => linha?.lote || linha?.quantidade)
+    : [];
   const selectedPhoto =
     selectedPhotoIndex == null ? null : item.fotos?.[selectedPhotoIndex];
   const photoKey = (photo, index) => photo.chave || photo.url || String(index);
@@ -211,10 +214,23 @@ export function Detail({ shared = false }) {
                 <dd>{item.produto}</dd>
               </div>
             )}
-            {item.quantidade && (
+            {item.quantidade && !lotesQuantidades.length && (
               <div>
                 <dt>Quantidade</dt>
                 <dd>{item.quantidade}</dd>
+              </div>
+            )}
+            {lotesQuantidades.length > 0 && (
+              <div>
+                <dt>Quantidade por lote</dt>
+                <dd className="lot-quantities">
+                  {lotesQuantidades.map((linha, index) => (
+                    <span key={`${linha.lote}-${index}`}>
+                      <b>{linha.lote || "-"}</b>
+                      {linha.quantidade || "-"}
+                    </span>
+                  ))}
+                </dd>
               </div>
             )}
             {item.placaVeiculo && (

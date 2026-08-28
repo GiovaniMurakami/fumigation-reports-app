@@ -103,12 +103,13 @@ const header = (doc, title, identifier, logo) => {
 
 const identification = (doc, item, startY) => {
   const isLoadingReport = item.tipoControle === "Carregamento";
+  const hasLotQuantities = Array.isArray(item.lotesQuantidades) && item.lotesQuantidades.some(row => row?.lote || row?.quantidade);
   const fields = [
     ["EMPRESA", item.empresa],
     ...(!isLoadingReport ? [["CLIENTE / UNIDADE", item.unidadeCliente || item.formularioTitulo]] : []),
     ...(item.cliente ? [["CLIENTE", item.cliente]] : []),
     ...(item.produto ? [["PRODUTO", item.produto]] : []),
-    ...(item.quantidade ? [["QUANTIDADE", item.quantidade]] : []),
+    ...(item.quantidade && !hasLotQuantities ? [["QUANTIDADE", item.quantidade]] : []),
     ...(item.placaVeiculo ? [["PLACA DO VEÍCULO", item.placaVeiculo]] : []),
     ...(!isLoadingReport ? [["ÁREA / SETOR", item.areaSetor], ["REALIZADO POR", item.realizadoPor]] : []),
     ["DATA", formatDate(item.dataTratamento)],
@@ -131,6 +132,15 @@ const identification = (doc, item, startY) => {
     y += height + 2;
   }
   return y + 2;
+};
+
+const lotQuantitiesEntries = item => {
+  const rows = Array.isArray(item.lotesQuantidades)
+    ? item.lotesQuantidades.filter(row => row?.lote || row?.quantidade)
+    : [];
+  return rows.length
+    ? [{ key: "Quantidade por lote", value: rows.map(row => `${row.lote || "-"}: ${row.quantidade || "-"}`).join(" | ") }]
+    : [];
 };
 
 const measureData = (doc, entries, fontSize) => {
@@ -236,7 +246,13 @@ export async function baixarPdfRelatorio(item) {
   let y = identification(doc, item, 39);
   const signatureTop = drawSignatures(doc, item.assinaturas || [], signatureImages);
   const photoReserve = item.fotos?.length ? 52 : 0;
-  const entries = Object.entries(item.dados || {}).map(([key, value]) => ({ key, value: textValue(value) })).filter(entry => entry.value);
+  const entries = [
+    ...lotQuantitiesEntries(item),
+    ...Object.entries(item.dados || {})
+      .filter(([key]) => key !== "Lotes / quantidades")
+      .map(([key, value]) => ({ key, value: textValue(value) }))
+      .filter(entry => entry.value),
+  ];
   y = drawData(doc, entries, y, Math.max(25, signatureTop - y - photoReserve - 5));
   drawPhotos(doc, item.fotos || [], photoImages, title, logo, y + 3, signatureTop - 3);
   footer(doc);
