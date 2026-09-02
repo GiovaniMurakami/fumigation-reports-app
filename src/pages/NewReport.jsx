@@ -13,12 +13,14 @@ import { formCatalog } from "../formTemplates";
 import { formatValue, valueOf } from "../utils/formatters";
 import {
   fieldLabel,
+  fumigationServiceFields,
   getTrapRows,
   masterFieldIds,
   repeatableTrapSections,
   rodentStatusHelp,
   sanitizeField,
   shouldHideField,
+  technicianResponsibleLabel,
 } from "../utils/reportFields";
 
 const initialReport = {
@@ -33,6 +35,14 @@ const fumigationEndDateId = "entry.2031509747";
 
 const dateToIso = (value) =>
   value ? new Date(`${value}T12:00:00`).toISOString() : undefined;
+
+const moveItem = (items, index, direction) => {
+  const nextIndex = index + direction;
+  if (nextIndex < 0 || nextIndex >= items.length) return items;
+  const next = [...items];
+  [next[index], next[nextIndex]] = [next[nextIndex], next[index]];
+  return next;
+};
 
 async function uploadFiles(files, onProgress) {
   const results = [];
@@ -164,6 +174,10 @@ export function NewReport() {
       ...form,
       dadosAtividade: { ...form.dadosAtividade, [entryId]: value },
     });
+  const moveFile = (index, direction) =>
+    setFiles((current) => moveItem(current, index, direction));
+  const removeFile = (index) =>
+    setFiles((current) => current.filter((_, fileIndex) => fileIndex !== index));
   const controle = valueOf(form.dadosIniciais, "entry.1424091944");
   const isLoadingReport = controle === "Carregamento";
   const sectionName = formCatalog.controlToSection[controle];
@@ -255,6 +269,17 @@ export function NewReport() {
           ])
           .filter(([, value]) => value),
       );
+      const fumigationDados =
+        sectionName === "Fumigação"
+          ? Object.fromEntries(
+              fumigationServiceFields
+                .map((field) => [
+                  field.key,
+                  formatValue(activityValues[field.key]),
+                ])
+                .filter(([, value]) => value),
+            )
+          : {};
       if (
         sectionName === "Captura de pombos" &&
         valueOf(form.dadosAtividade, "captura_pombos_quantidade")
@@ -373,6 +398,7 @@ export function NewReport() {
         dados: {
           ...baseFields,
           ...dados,
+          ...fumigationDados,
           ...repeatableDados,
           ...nestDados,
           ...rodentDados,
@@ -498,7 +524,7 @@ export function NewReport() {
                     </select>
                   </label>
                   <label className="field">
-                    <span>Realizado por</span>
+                    <span>{technicianResponsibleLabel}</span>
                     <select
                       value={valueOf(form.dadosIniciais, "entry.558955180")}
                       onChange={(e) => setInitial("entry.558955180", e.target.value)}
@@ -566,7 +592,10 @@ export function NewReport() {
           </FormSection>
         )}
         {controle && (
-          <FormSection number="03" title={sectionName || controle}>
+          <FormSection
+            number="03"
+            title={sectionName === "Fumigação" ? "Dados do serviço" : sectionName || controle}
+          >
             {hasLotes && (
               isLoadingReport ? (
                 <LoadingLots values={loadingLots} onChange={setLoadingLots} />
@@ -594,6 +623,14 @@ export function NewReport() {
                     value={valueOf(form.dadosAtividade, fumigationEndDateId)}
                     onChange={(value) => setActivity(fumigationEndDateId, value)}
                   />
+                  {fumigationServiceFields.map((field) => (
+                    <Field
+                      key={field.key}
+                      label={field.label}
+                      value={valueOf(form.dadosAtividade, field.key)}
+                      onChange={(value) => setActivity(field.key, value)}
+                    />
+                  ))}
                 </div>
               </>
             )}
@@ -708,7 +745,12 @@ export function NewReport() {
                 type="file"
                 accept="image/jpeg,image/png,image/webp"
                 multiple
-                onChange={(e) => setFiles(Array.from(e.target.files))}
+                onChange={(e) =>
+                  setFiles((current) => [
+                    ...current,
+                    ...Array.from(e.target.files || []),
+                  ])
+                }
               />
             </label>
             {files.length > 0 && (
@@ -719,9 +761,33 @@ export function NewReport() {
                 </p>
                 <div className="file-list">
                   {files.map((file, index) => (
-                    <span key={`${file.name}-${file.size}-${file.lastModified}-${index}`}>
-                      {file.name}
-                    </span>
+                    <div
+                      className="file-list-item"
+                      key={`${file.name}-${file.size}-${file.lastModified}-${index}`}
+                    >
+                      <span>
+                        {index + 1}. {file.name}
+                      </span>
+                      <div className="file-order-actions">
+                        <button
+                          type="button"
+                          onClick={() => moveFile(index, -1)}
+                          disabled={index === 0}
+                        >
+                          ↑
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => moveFile(index, 1)}
+                          disabled={index === files.length - 1}
+                        >
+                          ↓
+                        </button>
+                        <button type="button" onClick={() => removeFile(index)}>
+                          ×
+                        </button>
+                      </div>
+                    </div>
                   ))}
                 </div>
               </>

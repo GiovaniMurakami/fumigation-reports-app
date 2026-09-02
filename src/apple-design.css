@@ -534,7 +534,7 @@ body {
 }
 .edit-photo-item > div {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr);
   gap: 8px;
   align-items: center;
   padding: 10px;
@@ -552,6 +552,40 @@ body {
   border-radius: 9px;
   padding: 7px 10px;
   font-size: 12px;
+}
+.photo-order-actions,
+.file-order-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+.photo-order-actions button,
+.file-order-actions button,
+.edit-new-files button {
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 8px;
+  background: #dfe9e2;
+  color: var(--green-dark);
+  font-weight: 800;
+  line-height: 1;
+}
+.photo-order-actions button,
+.file-order-actions button {
+  width: 32px;
+  height: 32px;
+  flex: 0 0 auto;
+}
+.photo-order-actions button:disabled,
+.file-order-actions button:disabled,
+.edit-new-files button:disabled {
+  cursor: not-allowed;
+  opacity: 0.38;
+}
+.photo-order-actions .danger {
+  width: auto;
 }
 .edit-photo-dropzone {
   min-height: 104px;
@@ -575,15 +609,10 @@ body {
   font-weight: 650;
 }
 .edit-new-files button {
-  width: 22px;
-  height: 22px;
-  display: grid;
-  place-items: center;
-  border: 0;
+  width: 24px;
+  height: 24px;
   border-radius: 999px;
-  background: #dfe9e2;
-  color: var(--green-dark);
-  line-height: 1;
+  flex: 0 0 auto;
 }
 .edit-lot-row {
   display: grid;

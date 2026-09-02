@@ -16,6 +16,17 @@ export const repeatableTrapSections = new Set([
 export const masterFieldIds = new Set(["entry.1721614377", "entry.1994831449", "entry.558955180"]);
 export const nestRemovalOptions = ["Apenas remoção", "Repelente Thursan"];
 export const rodentStatusOptions = ["CO - Consumido", "DE - Desgastado", "AU - Ausente", "OB - Obstruído", "IN - Intacto"];
+export const technicianResponsibleLabel = "Técnico responsável";
+
+export const fumigationServiceFields = [
+  { key: "Metragem cúbica", label: "Metragem cúbica", type: "resposta_curta" },
+  { key: "Dosagem", label: "Dosagem", type: "resposta_curta" },
+  { key: "Quantidade de bandejas colocadas", label: "Quantidade de bandejas colocadas", type: "resposta_curta" },
+  { key: "Responsável por colocar", label: "Responsável por colocar", type: "resposta_curta" },
+  { key: "Quantidade de bandejas retiradas", label: "Quantidade de bandejas retiradas", type: "resposta_curta" },
+  { key: "Responsável por retirar", label: "Responsável por retirar", type: "resposta_curta" },
+  { key: "Identificador do reagente utilizado", label: "Identificador do reagente utilizado", type: "resposta_curta" },
+];
 
 export const fieldLabel = (field) => {
   if (field.label && field.row) return `${field.label} - ${field.row}`;

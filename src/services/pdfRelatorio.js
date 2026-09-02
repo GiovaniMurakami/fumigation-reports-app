@@ -3,6 +3,7 @@ import { apiBaseUrl } from "../api";
 
 const colors = { dark: [10, 46, 24], green: [21, 99, 50], lime: [168, 214, 58], text: [24, 49, 44], muted: [100, 116, 139], line: [220, 232, 223], light: [246, 250, 247] };
 const page = { width: 210, height: 297, margin: 15, content: 180, footer: 282 };
+const technicianResponsibleLabel = "TÉCNICO RESPONSÁVEL";
 
 const titleByType = {
   "Captura de pombos": "RELATÓRIO DE CAPTURA DE POMBOS",
@@ -117,7 +118,7 @@ const identification = (doc, item, startY) => {
     ...(!hasLotQuantities && lotesRelatorio.length ? [["LOTES", lotesRelatorio.join(" | ")]] : []),
     ...(item.quantidade && !hasLotQuantities ? [["QUANTIDADE", item.quantidade]] : []),
     ...(item.placaVeiculo ? [["PLACA DO VEÍCULO", item.placaVeiculo]] : []),
-    ...(!isLoadingReport ? [["ÁREA / SETOR", item.areaSetor], ["REALIZADO POR", item.realizadoPor]] : []),
+    ...(!isLoadingReport ? [["ÁREA / SETOR", item.areaSetor], [technicianResponsibleLabel, item.realizadoPor]] : []),
     ["DATA", formatDate(item.dataTratamento)],
     ["TIPO DE CONTROLE", item.tipoControle],
     ...(item.dataInicio ? [["DATA INÍCIO", formatDateOnly(item.dataInicio)]] : []),
@@ -165,7 +166,10 @@ const duplicatedDataKeys = (item, hasLotQuantities) => {
     keys.add("Área/Setor ");
     keys.add("Área / setor");
   }
-  if (item.realizadoPor) keys.add("Realizado por:");
+  if (item.realizadoPor) {
+    keys.add("Realizado por:");
+    keys.add("Técnico responsável");
+  }
   return keys;
 };
 

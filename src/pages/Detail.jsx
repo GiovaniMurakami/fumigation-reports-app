@@ -6,7 +6,13 @@ import { AppleIcon } from "../components/AppleIcon";
 import { Layout } from "../components/Layout";
 import { formCatalog } from "../formTemplates";
 import { formatDate, formatDateOnly, formatValue } from "../utils/formatters";
-import { fieldLabel, sanitizeField, shouldHideField } from "../utils/reportFields";
+import {
+  fieldLabel,
+  fumigationServiceFields,
+  sanitizeField,
+  shouldHideField,
+  technicianResponsibleLabel,
+} from "../utils/reportFields";
 
 const normalizeControlName = (value) =>
   value === "Arm. Feromônio - Epdópterus"
@@ -44,7 +50,10 @@ const duplicatedDataKeys = (item, lotesQuantidades) => {
     keys.add("Área/Setor ");
     keys.add("Área / setor");
   }
-  if (item.realizadoPor) keys.add("Realizado por:");
+  if (item.realizadoPor) {
+    keys.add("Realizado por:");
+    keys.add(technicianResponsibleLabel);
+  }
   return keys;
 };
 
@@ -72,6 +81,14 @@ const compactObject = (entries) =>
     }),
   );
 
+const moveItem = (items, index, direction) => {
+  const nextIndex = index + direction;
+  if (nextIndex < 0 || nextIndex >= items.length) return items;
+  const next = [...items];
+  [next[index], next[nextIndex]] = [next[nextIndex], next[index]];
+  return next;
+};
+
 const dataValueToInput = (value) => {
   if (value == null) return "";
   if (typeof value === "string") return value;
@@ -97,7 +114,13 @@ const fixedServiceFieldsForReport = (item) => {
   }
 
   const sectionName = formCatalog.controlToSection[item.tipoControle];
-  if (!sectionName || sectionName === "Fumigação") return [];
+  if (sectionName === "Fumigação") {
+    return fumigationServiceFields.map((field) => ({
+      ...field,
+      options: [],
+    }));
+  }
+  if (!sectionName) return [];
 
   const fields = (formCatalog.sections[sectionName] || [])
     .filter((field) => !shouldHideField(field, sectionName))
@@ -394,10 +417,24 @@ export function Detail({ shared = false }) {
     }));
   }
 
+  function moveEditPhoto(index, direction) {
+    setEditForm((current) => ({
+      ...current,
+      fotos: moveItem(current.fotos, index, direction),
+    }));
+  }
+
   function removeNewFile(index) {
     setEditForm((current) => ({
       ...current,
       novosArquivos: current.novosArquivos.filter((_, fileIndex) => fileIndex !== index),
+    }));
+  }
+
+  function moveNewFile(index, direction) {
+    setEditForm((current) => ({
+      ...current,
+      novosArquivos: moveItem(current.novosArquivos, index, direction),
     }));
   }
 
@@ -631,7 +668,7 @@ export function Detail({ shared = false }) {
                   <dd>{item.areaSetor || "-"}</dd>
                 </div>
                 <div>
-                  <dt>Realizado por</dt>
+                  <dt>{technicianResponsibleLabel}</dt>
                   <dd>{item.realizadoPor || "-"}</dd>
                 </div>
               </>
@@ -774,7 +811,7 @@ export function Detail({ shared = false }) {
                     />
                   </label>
                   <label className="field">
-                    <span>Realizado por</span>
+                    <span>{technicianResponsibleLabel}</span>
                     <SelectOrInput
                       value={editForm.realizadoPor}
                       options={initialFieldOptions("entry.558955180")}
@@ -898,14 +935,30 @@ export function Detail({ shared = false }) {
                     <div className="edit-photo-item" key={photoKey(foto, index)}>
                       <img src={foto.url} alt={foto.nome || `Foto ${index + 1}`} />
                       <div>
-                        <span>{foto.nome || `Foto ${index + 1}`}</span>
-                        <button
-                          className="danger"
-                          type="button"
-                          onClick={() => removeEditPhoto(index)}
-                        >
-                          Remover
-                        </button>
+                        <span>{index + 1}. {foto.nome || `Foto ${index + 1}`}</span>
+                        <div className="photo-order-actions">
+                          <button
+                            type="button"
+                            onClick={() => moveEditPhoto(index, -1)}
+                            disabled={index === 0}
+                          >
+                            ↑
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => moveEditPhoto(index, 1)}
+                            disabled={index === editForm.fotos.length - 1}
+                          >
+                            ↓
+                          </button>
+                          <button
+                            className="danger"
+                            type="button"
+                            onClick={() => removeEditPhoto(index)}
+                          >
+                            Remover
+                          </button>
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -932,7 +985,21 @@ export function Detail({ shared = false }) {
                 <div className="edit-new-files">
                   {editForm.novosArquivos.map((file, index) => (
                     <span key={`${file.name}-${file.size}-${file.lastModified}-${index}`}>
-                      {file.name}
+                      {editForm.fotos.length + index + 1}. {file.name}
+                      <button
+                        type="button"
+                        onClick={() => moveNewFile(index, -1)}
+                        disabled={index === 0}
+                      >
+                        ↑
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => moveNewFile(index, 1)}
+                        disabled={index === editForm.novosArquivos.length - 1}
+                      >
+                        ↓
+                      </button>
                       <button type="button" onClick={() => removeNewFile(index)}>
                         ×
                       </button>
