@@ -89,6 +89,24 @@ const moveItem = (items, index, direction) => {
   return next;
 };
 
+const moveItemTo = (items, fromIndex, toIndex) => {
+  if (
+    !Number.isInteger(fromIndex) ||
+    !Number.isInteger(toIndex) ||
+    fromIndex === toIndex ||
+    fromIndex < 0 ||
+    toIndex < 0 ||
+    fromIndex >= items.length ||
+    toIndex >= items.length
+  ) {
+    return items;
+  }
+  const next = [...items];
+  const [moved] = next.splice(fromIndex, 1);
+  next.splice(toIndex, 0, moved);
+  return next;
+};
+
 const dataValueToInput = (value) => {
   if (value == null) return "";
   if (typeof value === "string") return value;
@@ -159,6 +177,13 @@ const serviceDataFieldsToObject = (item, fields) => {
 };
 
 const photoKey = (photo, index) => photo.chave || photo.url || String(index);
+const fileKey = (file, index) => `${file.name}-${file.size}-${file.lastModified}-${index}`;
+
+const dropIndexFromPoint = (clientX, clientY, selector) => {
+  const target = document.elementFromPoint(clientX, clientY)?.closest(selector);
+  const index = Number(target?.dataset.sortIndex);
+  return Number.isInteger(index) ? index : null;
+};
 
 const editStateFromReport = (item) => ({
   empresa: item.empresa || "",
@@ -295,6 +320,12 @@ export function Detail({ shared = false }) {
   const [savingEdit, setSavingEdit] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [editUploadProgress, setEditUploadProgress] = useState(null);
+  const [draggingPhotoIndex, setDraggingPhotoIndex] = useState(null);
+  const [dragOverPhotoIndex, setDragOverPhotoIndex] = useState(null);
+  const [draggingFileIndex, setDraggingFileIndex] = useState(null);
+  const [dragOverFileIndex, setDragOverFileIndex] = useState(null);
+  const [sortAnimationId, setSortAnimationId] = useState(0);
+  const [newFilePreviews, setNewFilePreviews] = useState({});
   const canWrite =
     auth?.usuario?.role === "admin" || auth?.usuario?.role === "funcionario";
   const canManageReport = !shared && auth?.usuario?.role === "admin";
@@ -326,6 +357,23 @@ export function Detail({ shared = false }) {
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [item?.fotos?.length, selectedPhotoIndex]);
+
+  useEffect(() => {
+    const files = editForm?.novosArquivos || [];
+    if (!files.length) {
+      setNewFilePreviews({});
+      return undefined;
+    }
+
+    const previews = Object.fromEntries(
+      files.map((file, index) => [fileKey(file, index), URL.createObjectURL(file)]),
+    );
+    setNewFilePreviews(previews);
+
+    return () => {
+      Object.values(previews).forEach((url) => URL.revokeObjectURL(url));
+    };
+  }, [editForm?.novosArquivos]);
 
   async function exportPdf() {
     try {
@@ -424,6 +472,14 @@ export function Detail({ shared = false }) {
     }));
   }
 
+  function reorderEditPhoto(fromIndex, toIndex) {
+    setEditForm((current) => ({
+      ...current,
+      fotos: moveItemTo(current.fotos, fromIndex, toIndex),
+    }));
+    setSortAnimationId((current) => current + 1);
+  }
+
   function removeNewFile(index) {
     setEditForm((current) => ({
       ...current,
@@ -436,6 +492,66 @@ export function Detail({ shared = false }) {
       ...current,
       novosArquivos: moveItem(current.novosArquivos, index, direction),
     }));
+  }
+
+  function reorderNewFile(fromIndex, toIndex) {
+    setEditForm((current) => ({
+      ...current,
+      novosArquivos: moveItemTo(current.novosArquivos, fromIndex, toIndex),
+    }));
+    setSortAnimationId((current) => current + 1);
+  }
+
+  function startTouchPhotoSort(index, event) {
+    if (event.pointerType === "mouse") return;
+    event.preventDefault();
+    event.currentTarget.setPointerCapture?.(event.pointerId);
+    setDraggingPhotoIndex(index);
+    setDragOverPhotoIndex(index);
+  }
+
+  function moveTouchPhotoSort(event) {
+    if (draggingPhotoIndex == null || event.pointerType === "mouse") return;
+    event.preventDefault();
+    const index = dropIndexFromPoint(event.clientX, event.clientY, "[data-photo-sort]");
+    if (index != null) setDragOverPhotoIndex(index);
+  }
+
+  function finishTouchPhotoSort(event) {
+    if (draggingPhotoIndex == null || event.pointerType === "mouse") return;
+    event.preventDefault();
+    const index =
+      dropIndexFromPoint(event.clientX, event.clientY, "[data-photo-sort]") ??
+      dragOverPhotoIndex;
+    reorderEditPhoto(draggingPhotoIndex, index);
+    setDraggingPhotoIndex(null);
+    setDragOverPhotoIndex(null);
+  }
+
+  function startTouchFileSort(index, event) {
+    if (event.pointerType === "mouse") return;
+    event.preventDefault();
+    event.currentTarget.setPointerCapture?.(event.pointerId);
+    setDraggingFileIndex(index);
+    setDragOverFileIndex(index);
+  }
+
+  function moveTouchFileSort(event) {
+    if (draggingFileIndex == null || event.pointerType === "mouse") return;
+    event.preventDefault();
+    const index = dropIndexFromPoint(event.clientX, event.clientY, "[data-file-sort]");
+    if (index != null) setDragOverFileIndex(index);
+  }
+
+  function finishTouchFileSort(event) {
+    if (draggingFileIndex == null || event.pointerType === "mouse") return;
+    event.preventDefault();
+    const index =
+      dropIndexFromPoint(event.clientX, event.clientY, "[data-file-sort]") ??
+      dragOverFileIndex;
+    reorderNewFile(draggingFileIndex, index);
+    setDraggingFileIndex(null);
+    setDragOverFileIndex(null);
   }
 
   async function saveEdit(event) {
@@ -930,12 +1046,63 @@ export function Detail({ shared = false }) {
                 </span>
               </div>
               {editForm.fotos.length ? (
-                <div className="edit-photo-grid">
+                <div className="edit-photo-list">
                   {editForm.fotos.map((foto, index) => (
-                    <div className="edit-photo-item" key={photoKey(foto, index)}>
-                      <img src={foto.url} alt={foto.nome || `Foto ${index + 1}`} />
-                      <div>
+                    <div
+                      className={[
+                        "edit-photo-item",
+                        draggingPhotoIndex === index ? "is-dragging" : "",
+                        dragOverPhotoIndex === index ? "is-drag-over" : "",
+                        sortAnimationId ? "is-sorted" : "",
+                      ].filter(Boolean).join(" ")}
+                      data-photo-sort
+                      data-sort-index={index}
+                      draggable
+                      key={`${photoKey(foto, index)}-${sortAnimationId}`}
+                      onDragStart={(event) => {
+                        setDraggingPhotoIndex(index);
+                        event.dataTransfer.effectAllowed = "move";
+                        event.dataTransfer.setData("text/plain", String(index));
+                      }}
+                      onDragOver={(event) => {
+                        event.preventDefault();
+                        event.dataTransfer.dropEffect = "move";
+                        setDragOverPhotoIndex(index);
+                      }}
+                      onDrop={(event) => {
+                        event.preventDefault();
+                        reorderEditPhoto(draggingPhotoIndex, index);
+                        setDraggingPhotoIndex(null);
+                        setDragOverPhotoIndex(null);
+                      }}
+                      onDragEnd={() => {
+                        setDraggingPhotoIndex(null);
+                        setDragOverPhotoIndex(null);
+                      }}
+                    >
+                      <button
+                        className="drag-handle"
+                        type="button"
+                        aria-label={`Arrastar foto ${index + 1}`}
+                        title="Arrastar para ordenar"
+                        onPointerDown={(event) => startTouchPhotoSort(index, event)}
+                        onPointerMove={moveTouchPhotoSort}
+                        onPointerUp={finishTouchPhotoSort}
+                        onPointerCancel={() => {
+                          setDraggingPhotoIndex(null);
+                          setDragOverPhotoIndex(null);
+                        }}
+                      >
+                        ⋮⋮
+                      </button>
+                      <img
+                        className="edit-photo-thumb"
+                        src={foto.url}
+                        alt={foto.nome || `Foto ${index + 1}`}
+                      />
+                      <div className="edit-photo-meta">
                         <span>{index + 1}. {foto.nome || `Foto ${index + 1}`}</span>
+                        <small>Evidência atual</small>
                         <div className="photo-order-actions">
                           <button
                             type="button"
@@ -982,28 +1149,89 @@ export function Detail({ shared = false }) {
                 />
               </label>
               {editForm.novosArquivos.length > 0 && (
-                <div className="edit-new-files">
+                <div className="edit-new-file-list">
                   {editForm.novosArquivos.map((file, index) => (
-                    <span key={`${file.name}-${file.size}-${file.lastModified}-${index}`}>
-                      {editForm.fotos.length + index + 1}. {file.name}
+                    <div
+                      className={[
+                        "edit-photo-item",
+                        "edit-new-file-item",
+                        draggingFileIndex === index ? "is-dragging" : "",
+                        dragOverFileIndex === index ? "is-drag-over" : "",
+                        sortAnimationId ? "is-sorted" : "",
+                      ].filter(Boolean).join(" ")}
+                      data-file-sort
+                      data-sort-index={index}
+                      draggable
+                      key={`${fileKey(file, index)}-${sortAnimationId}`}
+                      onDragStart={(event) => {
+                        setDraggingFileIndex(index);
+                        event.dataTransfer.effectAllowed = "move";
+                        event.dataTransfer.setData("text/plain", String(index));
+                      }}
+                      onDragOver={(event) => {
+                        event.preventDefault();
+                        event.dataTransfer.dropEffect = "move";
+                        setDragOverFileIndex(index);
+                      }}
+                      onDrop={(event) => {
+                        event.preventDefault();
+                        reorderNewFile(draggingFileIndex, index);
+                        setDraggingFileIndex(null);
+                        setDragOverFileIndex(null);
+                      }}
+                      onDragEnd={() => {
+                        setDraggingFileIndex(null);
+                        setDragOverFileIndex(null);
+                      }}
+                    >
                       <button
+                        className="drag-handle"
                         type="button"
-                        onClick={() => moveNewFile(index, -1)}
-                        disabled={index === 0}
+                        aria-label={`Arrastar nova foto ${index + 1}`}
+                        title="Arrastar para ordenar"
+                        onPointerDown={(event) => startTouchFileSort(index, event)}
+                        onPointerMove={moveTouchFileSort}
+                        onPointerUp={finishTouchFileSort}
+                        onPointerCancel={() => {
+                          setDraggingFileIndex(null);
+                          setDragOverFileIndex(null);
+                        }}
                       >
-                        ↑
+                        ⋮⋮
                       </button>
-                      <button
-                        type="button"
-                        onClick={() => moveNewFile(index, 1)}
-                        disabled={index === editForm.novosArquivos.length - 1}
-                      >
-                        ↓
-                      </button>
-                      <button type="button" onClick={() => removeNewFile(index)}>
-                        ×
-                      </button>
-                    </span>
+                      <img
+                        className="edit-photo-thumb"
+                        src={newFilePreviews[fileKey(file, index)]}
+                        alt={file.name}
+                      />
+                      <div className="edit-photo-meta">
+                        <span>{editForm.fotos.length + index + 1}. {file.name}</span>
+                        <small>Nova foto</small>
+                        <div className="photo-order-actions">
+                          <button
+                            type="button"
+                            onClick={() => moveNewFile(index, -1)}
+                            disabled={index === 0}
+                          >
+                            ↑
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => moveNewFile(index, 1)}
+                            disabled={index === editForm.novosArquivos.length - 1}
+                          >
+                            ↓
+                          </button>
+                          <button
+                            className="danger"
+                            type="button"
+                            onClick={() => removeNewFile(index)}
+                          >
+                            Remover
+                          </button>
+                        </div>
+                      </div>
+                    </div>
                   ))}
                 </div>
               )}

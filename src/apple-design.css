@@ -513,36 +513,93 @@ body {
   display: grid;
   gap: 12px;
 }
-.edit-photo-grid {
+.edit-photo-list,
+.edit-new-file-list {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px;
 }
 .edit-photo-item {
+  display: grid;
+  grid-template-columns: 34px 88px minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  min-height: 88px;
   min-width: 0;
   overflow: hidden;
   border: 1px solid var(--line);
-  border-radius: 14px;
+  border-radius: 12px;
   background: rgba(255, 255, 255, 0.76);
+  box-shadow: var(--apple-shadow-sm);
+  cursor: grab;
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    opacity 160ms ease,
+    transform 160ms ease;
+  animation: photo-sort-settle 180ms ease-out;
 }
-.edit-photo-item img {
+.edit-photo-item:active {
+  cursor: grabbing;
+}
+.edit-photo-item.is-dragging {
+  opacity: 0.54;
+  transform: scale(0.985);
+}
+.edit-photo-item.is-drag-over {
+  border-color: rgba(20, 116, 60, 0.45);
+  box-shadow: 0 10px 24px rgba(20, 116, 60, 0.14);
+  transform: translateY(-2px);
+}
+.drag-handle {
+  width: 34px;
+  height: 100%;
+  min-height: 88px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-right: 1px solid var(--line);
+  border-radius: 0;
+  background: rgba(223, 233, 226, 0.7);
+  color: var(--apple-tertiary-label);
+  cursor: grab;
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: -4px;
+  line-height: 1;
+  touch-action: none;
+  user-select: none;
+}
+.drag-handle:active {
+  cursor: grabbing;
+}
+.edit-photo-thumb {
   display: block;
-  width: 100%;
-  height: 126px;
+  width: 88px;
+  height: 72px;
   object-fit: cover;
+  border-radius: 8px;
   background: #dde4df;
 }
-.edit-photo-item > div {
+.edit-photo-meta {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: 8px;
+  gap: 5px;
   align-items: center;
-  padding: 10px;
+  padding: 10px 10px 10px 0;
+  min-width: 0;
 }
 .edit-photo-item span {
   overflow: hidden;
-  color: var(--apple-secondary-label);
-  font-size: 12px;
+  color: var(--apple-label);
+  font-size: 13px;
+  font-weight: 650;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.edit-photo-item small {
+  overflow: hidden;
+  color: var(--apple-tertiary-label);
+  font-size: 11px;
   font-weight: 650;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -590,29 +647,21 @@ body {
 .edit-photo-dropzone {
   min-height: 104px;
 }
-.edit-new-files {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-.edit-new-files span {
-  display: inline-flex;
-  align-items: center;
-  max-width: 100%;
-  gap: 7px;
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  background: #eff5f0;
-  color: #284132;
-  padding: 7px 8px 7px 11px;
-  font-size: 12px;
-  font-weight: 650;
-}
 .edit-new-files button {
   width: 24px;
   height: 24px;
   border-radius: 999px;
   flex: 0 0 auto;
+}
+@keyframes photo-sort-settle {
+  from {
+    opacity: 0.72;
+    transform: translateY(6px) scale(0.992);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 .edit-lot-row {
   display: grid;
@@ -714,11 +763,18 @@ body {
   .modal-actions {
     grid-template-columns: 1fr;
   }
-  .edit-photo-grid {
-    grid-template-columns: 1fr;
+  .edit-photo-item {
+    grid-template-columns: 30px 72px minmax(0, 1fr);
+    gap: 8px;
+    min-height: 78px;
   }
-  .edit-photo-item > div {
-    grid-template-columns: 1fr;
+  .drag-handle {
+    width: 30px;
+    min-height: 78px;
+  }
+  .edit-photo-thumb {
+    width: 72px;
+    height: 62px;
   }
   .edit-photo-item .danger {
     width: 100%;
