@@ -3,8 +3,12 @@ import { useNavigate } from "react-router-dom";
 import { api } from "../api";
 import { useAuth } from "../auth/AuthContext";
 import { AppleIcon } from "../components/AppleIcon";
+import { DateInput } from "../components/DateInput";
 import { Layout } from "../components/Layout";
-import { formatDate } from "../utils/formatters";
+import { formatDate, formatDateOnly } from "../utils/formatters";
+
+const PAGE_SIZE = 20;
+const OVERVIEW_LIMIT = 100;
 
 const normalizeControlName = (value) =>
   value === "Arm. Feromônio - Epdópterus"
@@ -37,6 +41,25 @@ const buildControlFolders = (reports) =>
     return folders;
   }, new Map());
 
+const dayLabel = (value) => {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "Sem data";
+  return formatDateOnly(value);
+};
+
+const buildDailyGroups = (reports) =>
+  sortRecent(reports).reduce((groups, report) => {
+    const label = dayLabel(report.dataTratamento);
+    const current = groups.get(label) || {
+      label,
+      date: report.dataTratamento,
+      reports: [],
+    };
+    current.reports.push(report);
+    groups.set(label, current);
+    return groups;
+  }, new Map());
+
 const resumoRelatorio = (item) => {
   const lotesQuantidades = Array.isArray(item.lotesQuantidades)
     ? item.lotesQuantidades.filter((linha) => linha?.lote || linha?.quantidade)
@@ -56,6 +79,15 @@ const resumoRelatorio = (item) => {
     "Sem unidade informada"
   );
 };
+
+const reportTagText = (item) =>
+  [
+    item.numeroOs || item.lotes?.[0],
+    normalizeControlName(item.tipoControle),
+    item.cliente || item.empresa,
+  ]
+    .filter(Boolean)
+    .join(" • ") || "Relatório de controle";
 
 function ReportCard({ item, onOpen }) {
   return (
@@ -104,10 +136,11 @@ export function Dashboard() {
   const [dataOs, setDataOs] = useState("");
   const [appliedDataOs, setAppliedDataOs] = useState("");
   const [selectedControl, setSelectedControl] = useState("");
+  const [viewMode, setViewMode] = useState("folders");
   const [latestItems, setLatestItems] = useState([]);
   const [pagination, setPagination] = useState({
     pagina: 1,
-    limite: 20,
+    limite: OVERVIEW_LIMIT,
     total: 0,
     totalPaginas: 0,
     temProximaPagina: false,
@@ -120,6 +153,7 @@ export function Dashboard() {
     pagina = 1,
     dataOsFiltro = appliedDataOs,
     tipoControle = selectedControl,
+    limite = tipoControle ? PAGE_SIZE : OVERVIEW_LIMIT,
   ) => {
     setLoading(true);
     try {
@@ -128,12 +162,12 @@ export function Dashboard() {
         dataOs: dataOsFiltro,
         tipoControle,
         pagina,
-        limite: pagination.limite,
+        limite,
       });
       setItems(response.itens || []);
       setPagination(response.paginacao || {
         pagina,
-        limite: pagination.limite,
+        limite,
         total: response.itens?.length || 0,
         totalPaginas: 1,
         temProximaPagina: false,
@@ -149,7 +183,7 @@ export function Dashboard() {
       dataOs: dataOsFiltro,
       ordenar: "criados",
       pagina: 1,
-      limite: 3,
+      limite: 9,
     });
     setLatestItems(response.itens || []);
   };
@@ -164,20 +198,30 @@ export function Dashboard() {
     setAppliedQuery("");
     setAppliedDataOs("");
     setSelectedControl("");
+    setViewMode("folders");
     load("", 1, "", "");
     loadLatest("", "");
   };
   const openControlFolder = (tipoControle) => {
+    setViewMode("folders");
     setSelectedControl(tipoControle);
-    load(appliedQuery, 1, appliedDataOs, tipoControle);
+    load(appliedQuery, 1, appliedDataOs, tipoControle, PAGE_SIZE);
   };
   const closeControlFolder = () => {
     setSelectedControl("");
     load(appliedQuery, 1, appliedDataOs, "");
     loadLatest(appliedQuery, appliedDataOs);
   };
+  const switchViewMode = (mode) => {
+    setViewMode(mode);
+    setSelectedControl("");
+    load(appliedQuery, 1, appliedDataOs, "", OVERVIEW_LIMIT);
+    loadLatest(appliedQuery, appliedDataOs);
+  };
   const controlFolders = [...buildControlFolders(items).values()];
   const sortedItems = sortRecent(items);
+  const dailyGroups = [...buildDailyGroups(items).values()];
+  const isDailyView = viewMode === "days" && !selectedControl;
   const userEmpresas = [
     ...new Set([
       ...(Array.isArray(auth?.usuario?.empresas) ? auth.usuario.empresas : []),
@@ -220,7 +264,13 @@ export function Dashboard() {
           const nextDataOs = dataOs;
           setAppliedQuery(nextQuery);
           setAppliedDataOs(nextDataOs);
-          load(nextQuery, 1, nextDataOs, selectedControl);
+          load(
+            nextQuery,
+            1,
+            nextDataOs,
+            selectedControl,
+            selectedControl ? PAGE_SIZE : OVERVIEW_LIMIT,
+          );
           if (!selectedControl) loadLatest(nextQuery, nextDataOs);
         }}
       >
@@ -231,17 +281,16 @@ export function Dashboard() {
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="O.S., cliente, lote, produto ou placa"
+              placeholder="O.S., cliente, lote..."
               aria-label="Buscar relatórios"
             />
           </div>
         </label>
         <label className="filter-field filter-field-date">
           <span>Data da O.S.</span>
-          <input
-            type="date"
+          <DateInput
             value={dataOs}
-            onChange={(e) => setDataOs(e.target.value)}
+            onChange={setDataOs}
             aria-label="Filtrar por data da O.S."
           />
         </label>
@@ -260,9 +309,27 @@ export function Dashboard() {
           </button>
         </div>
       </form>
+      {!selectedControl && (
+        <div className="dashboard-view-tabs" aria-label="Visualização dos relatórios">
+          <button
+            className={viewMode === "folders" ? "active" : ""}
+            type="button"
+            onClick={() => switchViewMode("folders")}
+          >
+            Por tipo
+          </button>
+          <button
+            className={viewMode === "days" ? "active" : ""}
+            type="button"
+            onClick={() => switchViewMode("days")}
+          >
+            Por dia
+          </button>
+        </div>
+      )}
       <div className="section-title">
         <div>
-          <h2>{selectedControl || "Pastas de relatórios"}</h2>
+          <h2>{selectedControl || (isDailyView ? "Relatórios por dia" : "Pastas de relatórios")}</h2>
           {selectedControl && (
             <button
               className="link folder-back"
@@ -286,7 +353,7 @@ export function Dashboard() {
         </div>
       ) : (
         <>
-          {!selectedControl && (
+          {!selectedControl && !isDailyView && (
             <div className="folder-grid">
               {controlFolders.map((folder) => (
                 <button
@@ -313,6 +380,33 @@ export function Dashboard() {
               ))}
             </div>
           )}
+          {isDailyView && (
+            <div className="daily-report-list">
+              {dailyGroups.map((group) => (
+                <section className="daily-report-row" key={`${group.label}-${group.date || ""}`}>
+                  <div className="daily-report-date">
+                    <b>{group.label}</b>
+                    <span>
+                      {group.reports.length} relatório{group.reports.length !== 1 && "s"}
+                    </span>
+                  </div>
+                  <div className="daily-report-tags">
+                    {group.reports.map((item) => (
+                      <button
+                        className="report-tag"
+                        key={item.id}
+                        type="button"
+                        onClick={() => navigate(`/relatorios/${item.id}`)}
+                      >
+                        <span>{reportTagText(item)}</span>
+                        <small>{resumoRelatorio(item)}</small>
+                      </button>
+                    ))}
+                  </div>
+                </section>
+              ))}
+            </div>
+          )}
           {selectedControl && (
             <div className="report-grid">
               {sortedItems.map((item) => (
@@ -324,11 +418,11 @@ export function Dashboard() {
               ))}
             </div>
           )}
-          {!selectedControl && latestItems.length > 0 && (
+          {!selectedControl && !isDailyView && latestItems.length > 0 && (
             <>
               <div className="section-title latest-title">
                 <h2>Últimos relatórios criados</h2>
-                <span>3 mais recentes</span>
+                <span>9 mais recentes</span>
               </div>
               <div className="report-grid latest-report-grid">
                 {latestItems.map((item) => (
@@ -341,12 +435,20 @@ export function Dashboard() {
               </div>
             </>
           )}
-          {selectedControl && pagination.totalPaginas > 1 && (
+          {(selectedControl || isDailyView) && pagination.totalPaginas > 1 && (
             <nav className="pagination" aria-label="Paginação de relatórios">
               <button
                 className="secondary pagination-button"
                 disabled={loading || !pagination.temPaginaAnterior}
-                onClick={() => load(appliedQuery, pagination.pagina - 1, appliedDataOs, selectedControl)}
+                onClick={() =>
+                  load(
+                    appliedQuery,
+                    pagination.pagina - 1,
+                    appliedDataOs,
+                    selectedControl,
+                    selectedControl ? PAGE_SIZE : OVERVIEW_LIMIT,
+                  )
+                }
                 type="button"
               >
                 <AppleIcon name="chevronLeft" size={17} />
@@ -358,7 +460,15 @@ export function Dashboard() {
               <button
                 className="secondary pagination-button"
                 disabled={loading || !pagination.temProximaPagina}
-                onClick={() => load(appliedQuery, pagination.pagina + 1, appliedDataOs, selectedControl)}
+                onClick={() =>
+                  load(
+                    appliedQuery,
+                    pagination.pagina + 1,
+                    appliedDataOs,
+                    selectedControl,
+                    selectedControl ? PAGE_SIZE : OVERVIEW_LIMIT,
+                  )
+                }
                 type="button"
               >
                 Próxima

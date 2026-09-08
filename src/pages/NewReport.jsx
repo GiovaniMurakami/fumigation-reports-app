@@ -44,6 +44,27 @@ const moveItem = (items, index, direction) => {
   return next;
 };
 
+const fileKey = (file, index) =>
+  `${file.name}-${file.size}-${file.lastModified}-${index}`;
+
+function SelectedPhotoPreview({ file, index }) {
+  const [previewUrl, setPreviewUrl] = useState("");
+
+  useEffect(() => {
+    const url = URL.createObjectURL(file);
+    setPreviewUrl(url);
+    return () => URL.revokeObjectURL(url);
+  }, [file]);
+
+  return (
+    <img
+      className="file-list-thumb"
+      src={previewUrl}
+      alt={`Miniatura da foto ${index + 1}`}
+    />
+  );
+}
+
 async function uploadFiles(files, onProgress) {
   const results = [];
   let nextIndex = 0;
@@ -763,11 +784,15 @@ export function NewReport() {
                   {files.map((file, index) => (
                     <div
                       className="file-list-item"
-                      key={`${file.name}-${file.size}-${file.lastModified}-${index}`}
+                      key={fileKey(file, index)}
                     >
-                      <span>
-                        {index + 1}. {file.name}
-                      </span>
+                      <SelectedPhotoPreview file={file} index={index} />
+                      <div className="file-list-meta">
+                        <span>
+                          {index + 1}. {file.name}
+                        </span>
+                        <small>Foto selecionada</small>
+                      </div>
                       <div className="file-order-actions">
                         <button
                           type="button"

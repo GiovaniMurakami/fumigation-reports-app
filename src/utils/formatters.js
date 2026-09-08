@@ -1,11 +1,19 @@
-export const formatDate = (value) => new Intl.DateTimeFormat("pt-BR", {
-  dateStyle: "medium",
-  timeStyle: "short",
-}).format(new Date(value));
+export const formatDate = (value) => {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value || "";
+  return new Intl.DateTimeFormat("pt-BR", {
+    dateStyle: "short",
+    timeStyle: "short",
+  }).format(date);
+};
 
-export const formatDateOnly = (value) => new Intl.DateTimeFormat("pt-BR", {
-  dateStyle: "medium",
-}).format(new Date(value));
+export const formatDateOnly = (value) => {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value || "";
+  return new Intl.DateTimeFormat("pt-BR", {
+    dateStyle: "short",
+  }).format(date);
+};
 
 export const valueOf = (values, entryId) => values[entryId] || "";
 

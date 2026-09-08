@@ -1,4 +1,5 @@
 import { Field } from "../Field";
+import { DateInput } from "../DateInput";
 import { fieldLabel } from "../../utils/reportFields";
 
 const isProductField = (label) => /^produtos?(\s+utilizado)?$/i.test(label.trim());
@@ -78,7 +79,7 @@ export function DynamicField({ field, value, onChange, required, withToday }) {
         <div className="field">
           <span>{label}{required && " *"}</span>
           <div className="date-today-row">
-            <input type="date" value={value} onChange={event => onChange(field.entryId, event.target.value)} required={required} />
+	            <DateInput value={value} onChange={nextValue => onChange(field.entryId, nextValue)} required={required} />
             <button type="button" className="today-button" onClick={() => onChange(field.entryId, todayValue())}>Hoje</button>
           </div>
         </div>

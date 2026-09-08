@@ -14,7 +14,7 @@ const titleByType = {
   "Arm. Feromônio - Epdópterus": "RELATÓRIO DE ARMADILHAS FEROMÔNIO - LEPIDÓPTEROS",
   "Arm. Feromônio - Lepidópteros": "RELATÓRIO DE ARMADILHAS FEROMÔNIO - LEPIDÓPTEROS",
   "Pulverização Manual": "RELATÓRIO DE REALIZAÇÃO DE SERVIÇO DE PULVERIZAÇÃO",
-  "Pulverização Mecanizada": "RELATÓRIO DE REALIZAÇÃO DE SERVIÇO DE PULVERIZAÇÃO MECANIZADA",
+  "Aplicação de Mata-mato": "RELATÓRIO DE APLICAÇÃO DE MATA-MATO",
   "Fumigação": "RELATÓRIO DE FUMIGAÇÃO",
   "Carregamento": "RELATÓRIO DE CARREGAMENTO",
   "Termonebulização": "RELATÓRIO DE TERMONEBULIZAÇÃO",

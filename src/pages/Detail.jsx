@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { api } from "../api";
 import { useAuth } from "../auth/AuthContext";
 import { AppleIcon } from "../components/AppleIcon";
+import { DateInput } from "../components/DateInput";
 import { Layout } from "../components/Layout";
 import { formCatalog } from "../formTemplates";
 import { formatDate, formatDateOnly, formatValue } from "../utils/formatters";
@@ -255,10 +256,9 @@ function ServiceDataValueField({ line, index, onChange }) {
   }
   if (line.type === "data") {
     return (
-      <input
-        type="date"
+      <DateInput
         value={line.value}
-        onChange={(event) => onChange(index, "value", event.target.value)}
+        onChange={(value) => onChange(index, "value", value)}
       />
     );
   }
@@ -906,7 +906,7 @@ export function Detail({ shared = false }) {
               </label>
               <label className="field">
                 <span>Data</span>
-                <input type="date" value={editForm.dataTratamento} onChange={(e) => updateEditField("dataTratamento", e.target.value)} />
+                <DateInput value={editForm.dataTratamento} onChange={(value) => updateEditField("dataTratamento", value)} />
               </label>
               {!isLoadingReport && (
                 <>
@@ -955,13 +955,13 @@ export function Detail({ shared = false }) {
               {item.dataInicio && (
                 <label className="field">
                   <span>Data início</span>
-                  <input type="date" value={editForm.dataInicio} onChange={(e) => updateEditField("dataInicio", e.target.value)} />
+                  <DateInput value={editForm.dataInicio} onChange={(value) => updateEditField("dataInicio", value)} />
                 </label>
               )}
               {item.dataFim && (
                 <label className="field">
                   <span>Data fim</span>
-                  <input type="date" value={editForm.dataFim} onChange={(e) => updateEditField("dataFim", e.target.value)} />
+                  <DateInput value={editForm.dataFim} onChange={(value) => updateEditField("dataFim", value)} />
                 </label>
               )}
             </div>
