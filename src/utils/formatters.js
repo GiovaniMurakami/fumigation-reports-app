@@ -1,5 +1,12 @@
 export const formatDate = (value) => {
-  const date = new Date(value);
+  const raw = String(value || "");
+  const normalized =
+    /^\d{4}-\d{2}-\d{2}$/.test(raw)
+      ? `${raw}T12:00:00`
+      : /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(raw)
+        ? `${raw}:00`
+        : raw;
+  const date = new Date(normalized);
   if (Number.isNaN(date.getTime())) return value || "";
   return new Intl.DateTimeFormat("pt-BR", {
     dateStyle: "short",
@@ -17,6 +24,11 @@ export const formatDateOnly = (value) => {
 
 export const valueOf = (values, entryId) => values[entryId] || "";
 
+const looksLikeDateTime = (value) =>
+  /^\d{4}-\d{2}-\d{2}(?:T\d{2}:\d{2}(?::\d{2}(?:\.\d{3})?(?:Z|[+-]\d{2}:?\d{2})?)?)?$/.test(
+    String(value),
+  );
+
 export const formatValue = (value) => {
   if (value == null || value === "") return "";
   if (Array.isArray(value)) return value.map((item, index) => {
@@ -32,5 +44,6 @@ export const formatValue = (value) => {
     if (value.url) return value.url;
     return Object.entries(value).map(([key, val]) => `${key}: ${formatValue(val)}`).filter(Boolean).join("; ");
   }
+  if (looksLikeDateTime(value)) return formatDate(value);
   return String(value);
 };

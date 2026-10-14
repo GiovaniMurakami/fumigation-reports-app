@@ -6,7 +6,8 @@ import { AppleIcon } from "../components/AppleIcon";
 import { DateInput } from "../components/DateInput";
 import { Layout } from "../components/Layout";
 import { formCatalog } from "../formTemplates";
-import { formatDate, formatDateOnly, formatValue } from "../utils/formatters";
+import { dateToIso, toDateTimeInputValue } from "../utils/dateTime";
+import { formatDate, formatValue } from "../utils/formatters";
 import {
   fieldLabel,
   fumigationServiceFields,
@@ -65,15 +66,6 @@ const serviceDataEntries = (item, lotesQuantidades) => {
   );
 };
 
-const toDateInput = (value) => {
-  if (!value) return "";
-  const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? "" : date.toISOString().slice(0, 10);
-};
-
-const toIsoDate = (value) =>
-  value ? new Date(`${value}T12:00:00`).toISOString() : undefined;
-
 const compactObject = (entries) =>
   Object.fromEntries(
     Object.entries(entries).filter(([, value]) => {
@@ -115,7 +107,7 @@ const dataValueToInput = (value) => {
 };
 
 const serviceDataValueToInput = (field, value) => {
-  if (field.type === "data") return toDateInput(value);
+  if (field.type === "data") return toDateTimeInputValue(value);
   if (field.type === "hora") return value ? String(value).slice(0, 5) : "";
   return dataValueToInput(value);
 };
@@ -195,9 +187,9 @@ const editStateFromReport = (item) => ({
   unidadeCliente: item.unidadeCliente || "",
   areaSetor: item.areaSetor || "",
   realizadoPor: item.realizadoPor || "",
-  dataTratamento: toDateInput(item.dataTratamento),
-  dataInicio: toDateInput(item.dataInicio),
-  dataFim: toDateInput(item.dataFim),
+  dataTratamento: toDateTimeInputValue(item.dataTratamento),
+  dataInicio: toDateTimeInputValue(item.dataInicio),
+  dataFim: toDateTimeInputValue(item.dataFim),
   lotes: reportLots(item).join("\n"),
   lotesQuantidades: Array.isArray(item.lotesQuantidades)
     ? item.lotesQuantidades.map((linha) => ({
@@ -258,6 +250,7 @@ function ServiceDataValueField({ line, index, onChange }) {
     return (
       <DateInput
         value={line.value}
+        withTime
         onChange={(value) => onChange(index, "value", value)}
       />
     );
@@ -404,8 +397,8 @@ export function Detail({ shared = false }) {
         item.fotos.map((foto, index) => `${index + 1}. ${foto.url}`).join("\n") ||
         "Sem fotos anexadas";
       const periodo = [
-        item.dataInicio && `*Início:* ${formatDateOnly(item.dataInicio)}`,
-        item.dataFim && `*Fim:* ${formatDateOnly(item.dataFim)}`,
+        item.dataInicio && `*Início:* ${formatDate(item.dataInicio)}`,
+        item.dataFim && `*Fim:* ${formatDate(item.dataFim)}`,
       ].filter(Boolean);
       const mensagem = [
         `*${item.tipoControle || "Relatório de controle de pragas"} — Bio Safe Pest*`,
@@ -589,9 +582,9 @@ export function Detail({ shared = false }) {
         unidadeCliente: editForm.unidadeCliente.trim(),
         areaSetor: editForm.areaSetor.trim(),
         realizadoPor: editForm.realizadoPor.trim(),
-        dataTratamento: toIsoDate(editForm.dataTratamento),
-        dataInicio: editForm.dataInicio ? toIsoDate(editForm.dataInicio) : null,
-        dataFim: editForm.dataFim ? toIsoDate(editForm.dataFim) : null,
+        dataTratamento: dateToIso(editForm.dataTratamento),
+        dataInicio: editForm.dataInicio ? dateToIso(editForm.dataInicio) : null,
+        dataFim: editForm.dataFim ? dateToIso(editForm.dataFim) : null,
         lotes: usesLots && !isLoadingEdit ? linesToList(editForm.lotes) : undefined,
         lotesQuantidades: isLoadingEdit ? lotesQuantidades : undefined,
         dados,
@@ -792,13 +785,13 @@ export function Detail({ shared = false }) {
             {item.dataInicio && (
               <div>
                 <dt>Data início</dt>
-                <dd>{formatDateOnly(item.dataInicio)}</dd>
+                <dd>{formatDate(item.dataInicio)}</dd>
               </div>
             )}
             {item.dataFim && (
               <div>
                 <dt>Data fim</dt>
-                <dd>{formatDateOnly(item.dataFim)}</dd>
+                <dd>{formatDate(item.dataFim)}</dd>
               </div>
             )}
           </dl>
@@ -906,7 +899,7 @@ export function Detail({ shared = false }) {
               </label>
               <label className="field">
                 <span>Data</span>
-                <DateInput value={editForm.dataTratamento} onChange={(value) => updateEditField("dataTratamento", value)} />
+                <DateInput withTime value={editForm.dataTratamento} onChange={(value) => updateEditField("dataTratamento", value)} />
               </label>
               {!isLoadingReport && (
                 <>
@@ -955,13 +948,13 @@ export function Detail({ shared = false }) {
               {item.dataInicio && (
                 <label className="field">
                   <span>Data início</span>
-                  <DateInput value={editForm.dataInicio} onChange={(value) => updateEditField("dataInicio", value)} />
+                  <DateInput withTime value={editForm.dataInicio} onChange={(value) => updateEditField("dataInicio", value)} />
                 </label>
               )}
               {item.dataFim && (
                 <label className="field">
                   <span>Data fim</span>
-                  <DateInput value={editForm.dataFim} onChange={(value) => updateEditField("dataFim", value)} />
+                  <DateInput withTime value={editForm.dataFim} onChange={(value) => updateEditField("dataFim", value)} />
                 </label>
               )}
             </div>

@@ -10,6 +10,7 @@ import { RepeatableNestFields } from "../components/reports/RepeatableNestFields
 import { RepeatableRodentFields } from "../components/reports/RepeatableRodentFields";
 import { RepeatableTrapFields } from "../components/reports/RepeatableTrapFields";
 import { formCatalog } from "../formTemplates";
+import { dateToIso } from "../utils/dateTime";
 import { formatValue, valueOf } from "../utils/formatters";
 import {
   fieldLabel,
@@ -32,9 +33,6 @@ const initialReport = {
 
 const fumigationStartDateId = "entry.1661451672";
 const fumigationEndDateId = "entry.2031509747";
-
-const dateToIso = (value) =>
-  value ? new Date(`${value}T12:00:00`).toISOString() : undefined;
 
 const moveItem = (items, index, direction) => {
   const nextIndex = index + direction;
@@ -633,6 +631,7 @@ export function NewReport() {
                   <Field
                     label="Data início"
                     type="date"
+                    withTime
                     value={valueOf(form.dadosAtividade, fumigationStartDateId)}
                     onChange={(value) =>
                       setActivity(fumigationStartDateId, value)
@@ -641,6 +640,7 @@ export function NewReport() {
                   <Field
                     label="Data fim"
                     type="date"
+                    withTime
                     value={valueOf(form.dadosAtividade, fumigationEndDateId)}
                     onChange={(value) => setActivity(fumigationEndDateId, value)}
                   />

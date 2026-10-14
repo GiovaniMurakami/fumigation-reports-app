@@ -1,8 +1,31 @@
 import { useEffect, useRef, useState } from "react";
 
+const pad = (value) => String(value).padStart(2, "0");
+
+const splitDateTimeValue = (value) => {
+  const raw = String(value || "").trim();
+  if (!raw) return { date: "", time: "" };
+
+  if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) {
+    return { date: raw, time: "" };
+  }
+
+  if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(raw)) {
+    return { date: raw.slice(0, 10), time: raw.slice(11, 16) };
+  }
+
+  const parsed = new Date(raw);
+  if (Number.isNaN(parsed.getTime())) return { date: "", time: "" };
+
+  return {
+    date: `${parsed.getFullYear()}-${pad(parsed.getMonth() + 1)}-${pad(parsed.getDate())}`,
+    time: `${pad(parsed.getHours())}:${pad(parsed.getMinutes())}`,
+  };
+};
+
 const isoToBrazilianDate = (value) => {
-  const iso = String(value || "").slice(0, 10);
-  const match = iso.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  const { date } = splitDateTimeValue(value);
+  const match = date.match(/^(\d{4})-(\d{2})-(\d{2})$/);
   if (!match) return "";
   return `${match[3]}/${match[2]}/${match[1]}`;
 };
@@ -27,8 +50,8 @@ const brazilianDateToIso = (value) => {
 };
 
 const isoToDate = (value) => {
-  const iso = String(value || "").slice(0, 10);
-  const match = iso.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  const { date } = splitDateTimeValue(value);
+  const match = date.match(/^(\d{4})-(\d{2})-(\d{2})$/);
   if (!match) return null;
   return new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
 };
@@ -38,6 +61,17 @@ const dateToIso = (date) => {
   const month = String(date.getMonth() + 1).padStart(2, "0");
   const day = String(date.getDate()).padStart(2, "0");
   return `${year}-${month}-${day}`;
+};
+
+const currentTimeValue = () => {
+  const now = new Date();
+  return `${pad(now.getHours())}:${pad(now.getMinutes())}`;
+};
+
+const combineDateTime = (date, time, withTime) => {
+  if (!date) return "";
+  if (!withTime) return date;
+  return `${date}T${time || "00:00"}`;
 };
 
 const monthLabel = (date) =>
@@ -58,8 +92,17 @@ const calendarDays = (monthDate) => {
   ];
 };
 
-export function DateInput({ value, onChange, onBlur, placeholder = "dd/mm/aaaa", ...props }) {
+export function DateInput({
+  value,
+  onChange,
+  onBlur,
+  placeholder = "dd/mm/aaaa",
+  withTime = false,
+  ...props
+}) {
+  const parts = splitDateTimeValue(value);
   const [displayValue, setDisplayValue] = useState(isoToBrazilianDate(value));
+  const [timeValue, setTimeValue] = useState(parts.time || "");
   const [focused, setFocused] = useState(false);
   const [open, setOpen] = useState(false);
   const [visibleMonth, setVisibleMonth] = useState(() => isoToDate(value) || new Date());
@@ -68,6 +111,12 @@ export function DateInput({ value, onChange, onBlur, placeholder = "dd/mm/aaaa",
   useEffect(() => {
     if (!focused) setDisplayValue(isoToBrazilianDate(value));
   }, [focused, value]);
+
+  useEffect(() => {
+    if (!withTime) return;
+    const nextTime = splitDateTimeValue(value).time;
+    setTimeValue(nextTime || "");
+  }, [value, withTime]);
 
   useEffect(() => {
     const selectedDate = isoToDate(value);
@@ -83,6 +132,10 @@ export function DateInput({ value, onChange, onBlur, placeholder = "dd/mm/aaaa",
     return () => document.removeEventListener("mousedown", closeOnOutsideClick);
   }, [open]);
 
+  const emitChange = (nextDate, nextTime = timeValue) => {
+    onChange(combineDateTime(nextDate, nextTime, withTime));
+  };
+
   const handleChange = (event) => {
     const nextDisplayValue = maskBrazilianDate(event.target.value);
     setDisplayValue(nextDisplayValue);
@@ -94,9 +147,18 @@ export function DateInput({ value, onChange, onBlur, placeholder = "dd/mm/aaaa",
 
     const nextValue = brazilianDateToIso(nextDisplayValue);
     if (nextValue) {
-      onChange(nextValue);
+      const nextTime = withTime ? timeValue || currentTimeValue() : "";
+      if (withTime && !timeValue) setTimeValue(nextTime);
+      emitChange(nextValue, nextTime);
       setVisibleMonth(isoToDate(nextValue));
     }
+  };
+
+  const handleTimeChange = (event) => {
+    const nextTime = event.target.value;
+    setTimeValue(nextTime);
+    if (!parts.date) return;
+    emitChange(parts.date, nextTime);
   };
 
   const selectDate = (date) => {
@@ -104,42 +166,55 @@ export function DateInput({ value, onChange, onBlur, placeholder = "dd/mm/aaaa",
     setDisplayValue(isoToBrazilianDate(nextValue));
     setVisibleMonth(date);
     setOpen(false);
-    onChange(nextValue);
+    const nextTime = withTime ? timeValue || currentTimeValue() : "";
+    if (withTime && !timeValue) setTimeValue(nextTime);
+    emitChange(nextValue, nextTime);
   };
 
   const moveMonth = (amount) => {
     setVisibleMonth((current) => new Date(current.getFullYear(), current.getMonth() + amount, 1));
   };
 
-  const selectedValue = String(value || "").slice(0, 10);
+  const selectedValue = parts.date;
   const days = calendarDays(visibleMonth);
 
   return (
-    <div className={`date-input ${open ? "is-open" : ""}`} ref={containerRef}>
-      <div className="date-input-control">
-        <input
-          {...props}
-          type="text"
-          inputMode="numeric"
-          autoComplete="off"
-          pattern="\d{2}/\d{2}/\d{4}"
-          placeholder={placeholder}
-          value={displayValue}
-          onFocus={() => setFocused(true)}
-          onBlur={(event) => {
-            setFocused(false);
-            onBlur?.(event);
-          }}
-          onChange={handleChange}
-        />
-        <button
-          className="date-input-toggle"
-          type="button"
-          aria-label="Abrir calendário"
-          onClick={() => setOpen((current) => !current)}
-        >
-          Cal.
-        </button>
+    <div className={`date-input ${withTime ? "with-time" : ""} ${open ? "is-open" : ""}`} ref={containerRef}>
+      <div className="date-input-row">
+        <div className="date-input-control">
+          <input
+            {...props}
+            type="text"
+            inputMode="numeric"
+            autoComplete="off"
+            pattern="\d{2}/\d{2}/\d{4}"
+            placeholder={placeholder}
+            value={displayValue}
+            onFocus={() => setFocused(true)}
+            onBlur={(event) => {
+              setFocused(false);
+              onBlur?.(event);
+            }}
+            onChange={handleChange}
+          />
+          <button
+            className="date-input-toggle"
+            type="button"
+            aria-label="Abrir calendário"
+            onClick={() => setOpen((current) => !current)}
+          >
+            Cal.
+          </button>
+        </div>
+        {withTime && (
+          <input
+            className="date-time-input"
+            type="time"
+            value={timeValue}
+            aria-label="Horário"
+            onChange={handleTimeChange}
+          />
+        )}
       </div>
       {open && (
         <div className="date-calendar" role="dialog" aria-label="Calendário">

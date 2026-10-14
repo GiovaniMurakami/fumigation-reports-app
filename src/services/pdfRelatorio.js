@@ -121,8 +121,8 @@ const identification = (doc, item, startY) => {
     ...(!isLoadingReport ? [["ÁREA / SETOR", item.areaSetor], [technicianResponsibleLabel, item.realizadoPor]] : []),
     ["DATA", formatDate(item.dataTratamento)],
     ["TIPO DE CONTROLE", item.tipoControle],
-    ...(item.dataInicio ? [["DATA INÍCIO", formatDateOnly(item.dataInicio)]] : []),
-    ...(item.dataFim ? [["DATA FIM", formatDateOnly(item.dataFim)]] : []),
+    ...(item.dataInicio ? [["DATA INÍCIO", formatDate(item.dataInicio)]] : []),
+    ...(item.dataFim ? [["DATA FIM", formatDate(item.dataFim)]] : []),
   ];
   let y = startY;
   for (let row = 0; row < Math.ceil(fields.length / 3); row += 1) {
