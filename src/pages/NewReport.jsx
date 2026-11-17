@@ -307,6 +307,14 @@ export function NewReport() {
           form.dadosAtividade,
           "captura_pombos_quantidade",
         );
+      if (
+        sectionName === "Captura de pombos" &&
+        valueOf(form.dadosAtividade, "captura_pombos_observacao")
+      )
+        dados.Observação = valueOf(
+          form.dadosAtividade,
+          "captura_pombos_observacao",
+        );
       const repeatableDados = repeatableTrapSections.has(sectionName)
         ? {
             [sectionName]: (repeatableValues[sectionName] || [])
@@ -708,16 +716,30 @@ export function NewReport() {
                 />
               ))}
               {sectionName === "Captura de pombos" && (
-                <Field
-                  label="Quantidade capturado"
-                  value={valueOf(
-                    form.dadosAtividade,
-                    "captura_pombos_quantidade",
-                  )}
-                  onChange={(value) =>
-                    setActivity("captura_pombos_quantidade", value)
-                  }
-                />
+                <>
+                  <Field
+                    label="Quantidade capturado"
+                    value={valueOf(
+                      form.dadosAtividade,
+                      "captura_pombos_quantidade",
+                    )}
+                    onChange={(value) =>
+                      setActivity("captura_pombos_quantidade", value)
+                    }
+                  />
+                  <Field
+                    label="Observação"
+                    as="textarea"
+                    rows="3"
+                    value={valueOf(
+                      form.dadosAtividade,
+                      "captura_pombos_observacao",
+                    )}
+                    onChange={(value) =>
+                      setActivity("captura_pombos_observacao", value)
+                    }
+                  />
+                </>
               )}
             </div>
             {sectionName === "Captura de ninhos" && (

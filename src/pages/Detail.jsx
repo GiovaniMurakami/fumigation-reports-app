@@ -143,9 +143,29 @@ const fixedServiceFieldsForReport = (item) => {
       options: field.options || [],
     }));
 
-  return fields.filter(
+  const uniqueFields = fields.filter(
     (field, index) => fields.findIndex((candidate) => candidate.key === field.key) === index,
   );
+
+  if (sectionName === "Captura de pombos") {
+    return [
+      ...uniqueFields,
+      {
+        key: "Quantidade capturado",
+        label: "Quantidade capturado",
+        type: "resposta_curta",
+        options: [],
+      },
+      {
+        key: "Observação",
+        label: "Observação",
+        type: "paragrafo",
+        options: [],
+      },
+    ];
+  }
+
+  return uniqueFields;
 };
 
 const serviceDataFieldsFromReport = (item) =>
